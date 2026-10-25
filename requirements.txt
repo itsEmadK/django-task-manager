@@ -1,0 +1,6 @@
+djangorestframework
+drf-spectacular
+psycopg[binary]
+django-stubs
+djangorestframework-stubs
+python-dotenv
