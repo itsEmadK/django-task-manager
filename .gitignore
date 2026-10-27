@@ -1,3 +1,5 @@
 .venv
 .DS_Store
 .django-stub-gen
+__pycache__
+.env
