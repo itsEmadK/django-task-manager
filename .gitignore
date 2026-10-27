@@ -3,3 +3,4 @@
 .django-stub-gen
 __pycache__
 .env
+*.bkp
