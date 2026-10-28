@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "tasks.apps.TasksConfig",
     "rest_framework",
     "drf_spectacular",
+    "rest_framework.authtoken",
 ]
 
 MIDDLEWARE = [
