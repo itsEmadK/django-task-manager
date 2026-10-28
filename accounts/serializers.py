@@ -1,5 +1,6 @@
+from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework.fields import CharField, EmailField
 from rest_framework.serializers import ModelSerializer, Serializer
 from rest_framework.validators import UniqueValidator
@@ -88,6 +89,20 @@ class LoginRequestSerializer(Serializer):
         write_only=True,
         min_length=12,
     )
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        user = authenticate(
+            request=request,
+            email=attrs["email"],
+            password=attrs["password"],
+        )
+
+        if user is None:
+            raise AuthenticationFailed("Invalid email or password")
+
+        attrs["user"] = user
+        return attrs
 
 
 class LoginResponseSerializer(Serializer):

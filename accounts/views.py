@@ -50,10 +50,7 @@ class Login(APIView):
         request_serializer = LoginRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
 
-        user = authenticate(request, **request_serializer.validated_data)
-        if user is None:
-            raise AuthenticationFailed(code=str(status.HTTP_401_UNAUTHORIZED))
-
+        user = request_serializer.validated_data["user"]
         token, _ = Token.objects.get_or_create(user=user)
 
         response_serializer = LoginResponseSerializer(
