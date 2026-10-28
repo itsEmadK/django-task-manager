@@ -3,7 +3,9 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.parsers import JSONParser
 from rest_framework.permissions import AllowAny
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -17,6 +19,8 @@ from accounts.serializers import (
 
 class RegisterUser(APIView):
     permission_classes = [AllowAny]
+    renderer_classes = [JSONRenderer]
+    parser_classes = [JSONParser]
 
     @extend_schema(
         request=RegisterRequestSerializer,
@@ -42,6 +46,10 @@ class RegisterUser(APIView):
 
 
 class Login(APIView):
+    permission_classes = [AllowAny]
+    renderer_classes = [JSONRenderer]
+    parser_classes = [JSONParser]
+
     @extend_schema(
         request=LoginRequestSerializer,
         responses=LoginResponseSerializer,
