@@ -17,3 +17,5 @@ class User(AbstractBaseUser):
         default=18,
         validators=[MinValueValidator(18), MaxValueValidator(120)],
     )
+
+    USERNAME_FIELD = "email"
