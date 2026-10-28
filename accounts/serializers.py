@@ -1,3 +1,4 @@
+from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import CharField, EmailField
@@ -76,5 +77,20 @@ class RegisterRequestSerializer(Serializer):
 
 
 class RegisterResponseSerializer(Serializer):
+    user = UserSerializer(read_only=True)  # type: ignore
+    token = CharField(read_only=True)  # type: ignore
+
+
+class LoginRequestSerializer(Serializer):
+    email = EmailField(
+        required=True,
+    )
+    password = CharField(
+        write_only=True,
+        min_length=12,
+    )
+
+
+class LoginResponseSerializer(Serializer):
     user = UserSerializer(read_only=True)  # type: ignore
     token = CharField(read_only=True)  # type: ignore

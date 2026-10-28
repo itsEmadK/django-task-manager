@@ -1,10 +1,18 @@
+from django.contrib.auth import authenticate
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.serializers import RegisterRequestSerializer, RegisterResponseSerializer
+from accounts.serializers import (
+    LoginRequestSerializer,
+    LoginResponseSerializer,
+    RegisterRequestSerializer,
+    RegisterResponseSerializer,
+)
 
 
 class RegisterUser(APIView):
@@ -31,3 +39,27 @@ class RegisterUser(APIView):
             instance={"user": user, "token": token.key},
         )
         return Response(data=response_serializer.data, status=status.HTTP_201_CREATED)
+
+
+class Login(APIView):
+    @extend_schema(
+        request=LoginRequestSerializer,
+        responses=LoginResponseSerializer,
+    )
+    def post(self, request):
+        request_serializer = LoginRequestSerializer(data=request.data)
+        request_serializer.is_valid(raise_exception=True)
+
+        user = authenticate(request, **request_serializer.validated_data)
+        if user is None:
+            raise AuthenticationFailed(code=str(status.HTTP_401_UNAUTHORIZED))
+
+        token, _ = Token.objects.get_or_create(user=user)
+
+        response_serializer = LoginResponseSerializer(
+            instance={
+                "user": user,
+                "token": token.key,
+            }
+        )
+        return Response(data=response_serializer.data)
