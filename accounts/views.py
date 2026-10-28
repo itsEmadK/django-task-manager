@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -9,6 +10,10 @@ from accounts.serializers import RegisterRequestSerializer, RegisterResponseSeri
 class RegisterUser(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        request=RegisterRequestSerializer,
+        responses=RegisterResponseSerializer,
+    )
     def post(self, request):
         email = request.data.get("email")
         password = request.data.get("password")
