@@ -57,7 +57,10 @@ class RegisterRequestSerializer(Serializer):
         required=True,
         validators=[UniqueValidator(queryset=User.objects.all())],
     )
-    password = CharField(write_only=True, min_length=12)
+    password = CharField(
+        write_only=True,
+        min_length=12,
+    )
 
     def save(self):
         email = self.validated_data.pop("email")
@@ -73,5 +76,5 @@ class RegisterRequestSerializer(Serializer):
 
 
 class RegisterResponseSerializer(Serializer):
-    user = UserSerializer(required=True, read_only=True)  # type: ignore
-    token = CharField(rqeuired=True, read_only=True)  # type: ignore
+    user = UserSerializer(read_only=True)  # type: ignore
+    token = CharField(read_only=True)  # type: ignore
