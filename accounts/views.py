@@ -7,6 +7,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.permissions import (
     AllowAny,
     IsAdminUser,
+    IsAuthenticated,
 )
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -76,13 +77,25 @@ class Login(APIView):
         return Response(data=response_serializer.data)
 
 
+class UserList(APIView):
+    renderer_classes = [JSONRenderer]
+    parser_classes = [JSONParser]
+    permission_classes = [IsAdminUser]
+
+    @extend_schema(responses=UserSerializer)
+    def get(self, _):
+        users = User.objects.all()
+        serializer = UserSerializer(instance=users, many=True)  # type: ignore
+        return Response(data=serializer.data)
+
+
 class UserDetail(APIView):
     renderer_classes = [JSONRenderer]
     parser_classes = [JSONParser]
 
     def get_permissions(self):
         if self.request.method in ["GET", "PUT", "PATCH"]:
-            permission_classes = [IsSelf]
+            permission_classes = [IsAuthenticated, IsSelf]
         elif self.request.method == "DELETE":
             permission_classes = [IsAdminUser]
 
@@ -100,7 +113,7 @@ class UserDetail(APIView):
     def get(self, request, id):
         user = self.get_object(id=id, request=request)
         serializer = UserSerializer(instance=user)  # type: ignore
-        return Response(data= serializer.data)
+        return Response(data=serializer.data)
 
     @extend_schema(request=UserSerializer, responses=UserSerializer)
     def patch(self, request, id):

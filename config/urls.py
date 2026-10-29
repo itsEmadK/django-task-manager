@@ -18,11 +18,12 @@ Including another URLconf
 from django.urls import path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from accounts.views import Login, RegisterUser, UserDetail
+from accounts.views import Login, RegisterUser, UserDetail, UserList
 
 urlpatterns = [
     path("register/", RegisterUser.as_view()),
     path("login/", Login.as_view()),
+    path("admin/users", UserList.as_view()),
     path("users/<int:id>/", UserDetail.as_view(), name="user_detail"),
     path("api/schema", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs", SpectacularSwaggerView.as_view(url_name="schema")),
