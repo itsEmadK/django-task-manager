@@ -1,6 +1,9 @@
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.authtoken.models import Token
-from rest_framework.exceptions import AuthenticationFailed, ValidationError
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import ValidationError as DrfValidationError
 from rest_framework.fields import CharField, EmailField
 from rest_framework.serializers import ModelSerializer, Serializer
 from rest_framework.validators import UniqueValidator
@@ -8,7 +11,16 @@ from rest_framework.validators import UniqueValidator
 from accounts.models import User
 
 
+def drf_validate_password(value):
+    try:
+        validate_password(value)
+    except DjangoValidationError as e:
+        raise DrfValidationError(e.messages)
+
+
 class UserSerializer(ModelSerializer):
+    password = CharField(write_only=True, validators=[drf_validate_password])
+
     class Meta:
         model = User
         fields = [
@@ -38,16 +50,18 @@ class UserSerializer(ModelSerializer):
         }
 
     def create(self, validated_data):
-        raise ValidationError(
+        raise DrfValidationError(
             "Registering users must be done through the register serializer"
         )
 
     def update(self, instance: User, validated_data: dict):
         password = validated_data.pop("password", None)
-        instance.name = validated_data.get("name", instance.name)
-        instance.age = validated_data.get("age", instance.age)
         if password:
             instance.set_password(password)
+
+        instance.name = validated_data.get("name", instance.name)
+        instance.age = validated_data.get("age", instance.age)
+
         instance.save()
 
         return instance
@@ -58,17 +72,14 @@ class RegisterRequestSerializer(Serializer):
         required=True,
         validators=[UniqueValidator(queryset=User.objects.all())],
     )
-    password = CharField(
-        write_only=True,
-        min_length=12,
-    )
+    password = CharField(write_only=True, validators=[drf_validate_password])
 
     def save(self):
         email = self.validated_data.pop("email")
         password = self.validated_data.pop("password", None)
 
         if not password:
-            raise ValidationError("password is required")
+            raise DrfValidationError("password is required")
 
         user: User = User.objects.create_user(email=email, password=password)
         token = Token.objects.create(user=user)
@@ -87,7 +98,7 @@ class LoginRequestSerializer(Serializer):
     )
     password = CharField(
         write_only=True,
-        min_length=12,
+        validators=[drf_validate_password],
     )
 
     def validate(self, attrs):
