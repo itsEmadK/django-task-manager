@@ -1,19 +1,25 @@
-from django.contrib.auth import authenticate
+from django.core.exceptions import ObjectDoesNotExist
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import NotFound
 from rest_framework.parsers import JSONParser
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import (
+    AllowAny,
+    IsAdminUser,
+)
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.models import User
+from accounts.permissions import IsSelf
 from accounts.serializers import (
     LoginRequestSerializer,
     LoginResponseSerializer,
     RegisterRequestSerializer,
     RegisterResponseSerializer,
+    UserSerializer,
 )
 
 
@@ -68,3 +74,58 @@ class Login(APIView):
             }
         )
         return Response(data=response_serializer.data)
+
+
+class UserDetail(APIView):
+    renderer_classes = [JSONRenderer]
+    parser_classes = [JSONParser]
+
+    def get_permissions(self):
+        if self.request.method in ["GET", "PUT", "PATCH"]:
+            permission_classes = [IsSelf]
+        elif self.request.method == "DELETE":
+            permission_classes = [IsAdminUser]
+
+        return [permission() for permission in permission_classes]
+
+    def get_object(self, request, id) -> User:
+        try:
+            user = User.objects.get(id=id)
+            self.check_object_permissions(request=request, obj=user)
+            return user
+        except ObjectDoesNotExist:
+            raise NotFound("user does not exist")
+
+    @extend_schema(responses=UserSerializer)
+    def get(self, request, id):
+        user = self.get_object(id=id, request=request)
+        serializer = UserSerializer(instance=user)  # type: ignore
+        return Response(data= serializer.data)
+
+    @extend_schema(request=UserSerializer, responses=UserSerializer)
+    def patch(self, request, id):
+        user = self.get_object(id=id, request=request)
+        serializer = UserSerializer(
+            data=request.data,  # type: ignore
+            instance=user,  # type: ignore
+            partial=True,  # type: ignore
+        )
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(data=UserSerializer(instance=user).data)  # type: ignore
+
+    @extend_schema(request=UserSerializer, responses=UserSerializer)
+    def put(self, request, id):
+        user = self.get_object(id=id, request=request)
+        serializer = UserSerializer(
+            data=request.data,  # type: ignore
+            instance=user,  # type: ignore
+        )
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(data=UserSerializer(instance=user).data)  # type: ignore
+
+    def delete(self, request, id):
+        user = self.get_object(id=id, request=request)
+        user.delete()
+        return Response(data=UserSerializer(instance=user).data)  # type: ignore
