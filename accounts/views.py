@@ -1,8 +1,10 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import NotFound
+from rest_framework.generics import ListAPIView
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import (
     AllowAny,
@@ -13,6 +15,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.filters import UserFilter
 from accounts.models import User
 from accounts.permissions import IsSelf
 from accounts.serializers import (
@@ -77,16 +80,14 @@ class Login(APIView):
         return Response(data=response_serializer.data)
 
 
-class UserList(APIView):
+class UserList(ListAPIView):
     renderer_classes = [JSONRenderer]
     parser_classes = [JSONParser]
     permission_classes = [IsAdminUser]
-
-    @extend_schema(responses=UserSerializer)
-    def get(self, _):
-        users = User.objects.all()
-        serializer = UserSerializer(instance=users, many=True)  # type: ignore
-        return Response(data=serializer.data)
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = UserFilter
 
 
 class UserDetail(APIView):

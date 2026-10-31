@@ -4,3 +4,4 @@ psycopg[binary]
 django-stubs
 djangorestframework-stubs
 python-dotenv
+django-filter
