@@ -11,4 +11,15 @@ class UserFilter(django_filters.FilterSet):
                 "exact",
                 "icontains",
             ],
+            "age": [
+                "lte",
+                "gte",
+            ],
+            "is_staff": [
+                "exact",
+            ],
+            "email": [
+                "exact",
+                "icontains",
+            ],
         }
