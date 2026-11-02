@@ -32,7 +32,7 @@ class Task(models.Model):
         HIGH = 3, "High"
         URGENT = 4, "Urgent"
 
-    created_by = models.ForeignKey(
+    user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name="tasks",
