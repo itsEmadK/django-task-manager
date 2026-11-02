@@ -15,3 +15,16 @@ class IsSelf(permissions.BasePermission):
         obj: User,
     ) -> bool:
         return request.user == obj
+
+
+class IsOwner(permissions.BasePermission):
+
+    def has_object_permission(
+        self,
+        request: Request,
+        view,
+        obj: Any,
+    ) -> bool:
+        owner_field = getattr(view, "owner_field", "owner")
+        owner = getattr(obj, owner_field, None)
+        return request.user == owner
