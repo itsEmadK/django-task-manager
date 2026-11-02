@@ -6,7 +6,7 @@ from accounts.models import User
 
 
 def validate_due_date_in_the_future(value):
-    if value < timezone.now:
+    if value < timezone.now():
         raise exceptions.ValidationError("Due date must be in the future")
 
 
