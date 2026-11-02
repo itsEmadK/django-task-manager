@@ -66,3 +66,8 @@ class Task(models.Model):
         related_name="tasks",
         related_query_name="task",
     )
+
+    def clean(self):
+        super().clean()
+        if self.prerequisites.filter(id=self.id).exists():
+            raise exceptions.ValidationError("task can't be a prerequisite of itself")
