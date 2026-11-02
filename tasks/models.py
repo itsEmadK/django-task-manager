@@ -32,7 +32,7 @@ class Task(models.Model):
         HIGH = 3, "High"
         URGENT = 4, "Urgent"
 
-    user = models.ForeignKey(
+    owner = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name="tasks",
