@@ -43,3 +43,14 @@ class TaskList(ListCreateAPIView):
         context["user"] = self.request.user  # type: ignore
 
         return context
+
+
+class TaskDetail(RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated, IsOwner]
+    owner_field = "owner"
+    serializer_class = TaskSerializer
+    lookup_url_kwarg = "id"
+    lookup_field = "pk"
+
+    def get_queryset(self) -> QuerySet:
+        return Task.objects.filter(owner=self.request.user)
