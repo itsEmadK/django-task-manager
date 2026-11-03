@@ -3,8 +3,8 @@ from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIV
 from rest_framework.permissions import IsAuthenticated
 
 from accounts.permissions import IsOwner
-from tasks.models import Category
-from tasks.serializers import CategorySerializer
+from tasks.models import Category, Task
+from tasks.serializers import CategorySerializer, TaskSerializer
 
 
 class CategoryList(ListCreateAPIView):
@@ -26,3 +26,20 @@ class CategoryDetail(RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self) -> QuerySet:
         return Category.objects.filter(owner=self.request.user)
+
+
+class TaskList(ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TaskSerializer
+
+    def get_queryset(self) -> QuerySet:
+        return Task.objects.filter(owner=self.request.user)
+
+    def perform_create(self, serializer) -> None:
+        serializer.save(owner=self.request.user)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["user"] = self.request.user  # type: ignore
+
+        return context
