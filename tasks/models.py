@@ -63,6 +63,7 @@ class Task(models.Model):
         Category,
         on_delete=models.CASCADE,
         blank=True,
+        null=True,
         related_name="tasks",
         related_query_name="task",
     )
