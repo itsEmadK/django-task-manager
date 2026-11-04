@@ -86,4 +86,9 @@ class TaskSerializer(ModelSerializer):
         else:
             fields["prerequisite_ids"].queryset = Task.objects.none()  # type: ignore
             fields["category_id"].queryset = Category.objects.none()  # type: ignore
+
+        category_determined = self.context.get("category_determined", False)
+        if category_determined:
+            fields.pop("category_id")
+
         return fields

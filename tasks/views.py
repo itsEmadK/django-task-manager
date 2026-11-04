@@ -1,5 +1,9 @@
 from django.db.models.query import QuerySet
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import (
+    ListCreateAPIView,
+    RetrieveUpdateDestroyAPIView,
+    get_object_or_404,
+)
 from rest_framework.permissions import IsAuthenticated
 
 from accounts.permissions import IsOwner
@@ -54,3 +58,29 @@ class TaskDetail(RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self) -> QuerySet:
         return Task.objects.filter(owner=self.request.user)
+
+
+class CategoryTasks(ListCreateAPIView):
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_category(self):
+        category_id = self.kwargs["category_id"]
+        category = get_object_or_404(
+            queryset=Category.objects.filter(owner=self.request.user),
+            id=category_id,
+        )
+        return category
+
+    def get_queryset(self) -> QuerySet:
+        category = self.get_category()
+        return Task.objects.filter(category=category)
+
+    def perform_create(self, serializer) -> None:
+        category = self.get_category()
+        serializer.save(owner=self.request.user, category=category)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["category_determined"] = True  # type: ignore
+        return context

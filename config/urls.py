@@ -19,7 +19,13 @@ from django.urls import path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from accounts.views import CurrentUser, Login, RegisterUser, UserDetail, UserList
-from tasks.views import CategoryDetail, CategoryList, TaskDetail, TaskList
+from tasks.views import (
+    CategoryDetail,
+    CategoryList,
+    CategoryTasks,
+    TaskDetail,
+    TaskList,
+)
 
 urlpatterns = [
     path("register/", RegisterUser.as_view()),
@@ -27,6 +33,7 @@ urlpatterns = [
     path("me/", CurrentUser.as_view()),
     path("categories/", CategoryList.as_view()),
     path("categories/<int:id>", CategoryDetail.as_view()),
+    path("categories/<int:category_id>/tasks", CategoryTasks.as_view()),
     path("tasks/", TaskList.as_view()),
     path("tasks/<int:id>/", TaskDetail.as_view()),
     path("users/<int:id>/", UserDetail.as_view(), name="user_detail"),
