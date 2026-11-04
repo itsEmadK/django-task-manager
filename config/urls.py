@@ -23,6 +23,7 @@ from tasks.views import (
     CategoryDetail,
     CategoryList,
     CategoryTasks,
+    DeleteCategoryTasks,
     TaskDetail,
     TaskList,
 )
@@ -34,6 +35,7 @@ urlpatterns = [
     path("categories/", CategoryList.as_view()),
     path("categories/<int:id>", CategoryDetail.as_view()),
     path("categories/<int:category_id>/tasks", CategoryTasks.as_view()),
+    path("categories/<int:category_id>/delete-tasks", DeleteCategoryTasks.as_view()),
     path("tasks/", TaskList.as_view()),
     path("tasks/<int:id>/", TaskDetail.as_view()),
     path("users/<int:id>/", UserDetail.as_view(), name="user_detail"),

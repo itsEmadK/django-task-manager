@@ -5,6 +5,8 @@ from rest_framework.generics import (
     get_object_or_404,
 )
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from accounts.permissions import IsOwner
 from tasks.models import Category, Task
@@ -30,6 +32,22 @@ class CategoryDetail(RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self) -> QuerySet:
         return Category.objects.filter(owner=self.request.user)
+
+
+class DeleteCategoryTasks(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_category(self, category_id):
+        category = get_object_or_404(
+            queryset=Category.objects.filter(owner=self.request.user),
+            id=category_id,
+        )
+        return category
+
+    def delete(self, request, category_id):
+        category = self.get_category(category_id)
+        num_deleted, _ = category.tasks.all().delete()
+        return Response(data={"deleted_tasks_count": num_deleted})
 
 
 class TaskList(ListCreateAPIView):
