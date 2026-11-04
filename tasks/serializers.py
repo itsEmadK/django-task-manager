@@ -65,6 +65,8 @@ class TaskSerializer(ModelSerializer):
         return TaskSummarySerializer(obj.dependents.all(), many=True).data  # type: ignore
 
     def validate(self, attrs):
+        # TODO: make sure to later prevent circular dependencies
+
         prerequisites = attrs.get("prerequisites", [])
 
         if self.instance and self.instance in prerequisites:
