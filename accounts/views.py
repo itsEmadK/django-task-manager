@@ -12,6 +12,7 @@ from rest_framework.permissions import (
     IsAuthenticated,
 )
 from rest_framework.renderers import JSONRenderer
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -143,3 +144,14 @@ class UserDetail(APIView):
         user = self.get_object(id=id, request=request)
         user.delete()
         return Response(data=UserSerializer(instance=user).data)  # type: ignore
+
+
+class CurrentUser(APIView):
+    renderer_classes = [JSONRenderer]
+    parser_classes = [JSONParser]
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=UserSerializer)
+    def get(self, request: Request):
+        serializer = UserSerializer(instance=request.user)  # type: ignore
+        return Response(data=serializer.data)
