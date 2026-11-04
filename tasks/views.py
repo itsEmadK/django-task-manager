@@ -101,4 +101,5 @@ class CategoryTasks(ListCreateAPIView):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context["category_determined"] = True  # type: ignore
+        context["include_category"] = False  # type: ignore
         return context

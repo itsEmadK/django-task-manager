@@ -91,4 +91,8 @@ class TaskSerializer(ModelSerializer):
         if category_determined:
             fields.pop("category_id")
 
+        include_category = self.context.get("include_category", True)
+        if not include_category:
+            fields.pop("category")
+
         return fields
