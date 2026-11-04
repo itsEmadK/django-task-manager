@@ -1,10 +1,10 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from rest_framework.authtoken.models import Token
+from knox.models import AuthToken
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.exceptions import ValidationError as DrfValidationError
-from rest_framework.fields import CharField, EmailField
+from rest_framework.fields import CharField, DateTimeField, EmailField
 from rest_framework.serializers import ModelSerializer, Serializer
 from rest_framework.validators import UniqueValidator
 
@@ -82,14 +82,15 @@ class RegisterRequestSerializer(Serializer):
             raise DrfValidationError("password is required")
 
         user: User = User.objects.create_user(email=email, password=password)
-        token = Token.objects.create(user=user)
+        token, token_key = AuthToken.objects.create(user=user)  # type: ignore
 
-        return (user, token)
+        return (user, token, token_key)
 
 
 class RegisterResponseSerializer(Serializer):
     user = UserSerializer(read_only=True)  # type: ignore
-    token = CharField(read_only=True)  # type: ignore
+    token = CharField(read_only=True)
+    expiry = DateTimeField(read_only=True)
 
 
 class LoginRequestSerializer(Serializer):
@@ -119,3 +120,4 @@ class LoginRequestSerializer(Serializer):
 class LoginResponseSerializer(Serializer):
     user = UserSerializer(read_only=True)  # type: ignore
     token = CharField(read_only=True)  # type: ignore
+    expiry = DateTimeField(read_only=True)

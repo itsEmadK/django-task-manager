@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+from datetime import timedelta
 import os
 from pathlib import Path
 
@@ -46,8 +47,8 @@ INSTALLED_APPS = [
     "tasks.apps.TasksConfig",
     "rest_framework",
     "drf_spectacular",
-    "rest_framework.authtoken",
     "django_filters",
+    "knox",
 ]
 
 MIDDLEWARE = [
@@ -146,8 +147,15 @@ MAILERS = {
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication"
+        "knox.auth.TokenAuthentication",
     ],
+}
+
+REST_KNOX = {
+    "AUTO_REFRESH": True,
+    "TOKEN_TTL": timedelta(days=10),
+    "TOKEN_LIMIT_PER_USER": 3,
+    "AUTH_HEADER_PREFIX": "Bearer",
 }
 
 SPECTACULAR_SETTINGS = {

@@ -18,7 +18,15 @@ Including another URLconf
 from django.urls import path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from accounts.views import CurrentUser, Login, RegisterUser, UserDetail, UserList
+from accounts.views import (
+    CurrentUser,
+    Login,
+    Logout,
+    LogoutAll,
+    RegisterUser,
+    UserDetail,
+    UserList,
+)
 from tasks.views import (
     CategoryDetail,
     CategoryList,
@@ -31,6 +39,8 @@ from tasks.views import (
 urlpatterns = [
     path("register/", RegisterUser.as_view()),
     path("login/", Login.as_view()),
+    path("logout/", Logout.as_view()),
+    path("logoutall/", LogoutAll.as_view()),
     path("me/", CurrentUser.as_view()),
     path("categories/", CategoryList.as_view()),
     path("categories/<int:id>", CategoryDetail.as_view()),

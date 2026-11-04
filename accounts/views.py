@@ -1,8 +1,9 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
+from knox.models import AuthToken
+from knox.views import LogoutAllView, LogoutView
 from rest_framework import status
-from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import ListAPIView
 from rest_framework.parsers import JSONParser
@@ -49,9 +50,13 @@ class RegisterUser(APIView):
         )
         request_serializer.is_valid(raise_exception=True)
 
-        user, token = request_serializer.save()
+        user, token, token_key = request_serializer.save()
         response_serializer = RegisterResponseSerializer(
-            instance={"user": user, "token": token.key},
+            instance={
+                "user": user,
+                "token": token_key,
+                "expiry": token.expiry,
+            },
         )
         return Response(data=response_serializer.data, status=status.HTTP_201_CREATED)
 
@@ -70,12 +75,13 @@ class Login(APIView):
         request_serializer.is_valid(raise_exception=True)
 
         user = request_serializer.validated_data["user"]
-        token, _ = Token.objects.get_or_create(user=user)
+        token, token_key = AuthToken.objects.create(user=user)  # type: ignore
 
         response_serializer = LoginResponseSerializer(
             instance={
                 "user": user,
-                "token": token.key,
+                "token": token_key,
+                "expiry": token.expiry,
             }
         )
         return Response(data=response_serializer.data)
@@ -155,3 +161,13 @@ class CurrentUser(APIView):
     def get(self, request: Request):
         serializer = UserSerializer(instance=request.user)  # type: ignore
         return Response(data=serializer.data)
+
+
+class Logout(LogoutView):
+    def get_post_response(self, request):
+        return Response("successfully logged out", status=status.HTTP_200_OK)
+
+
+class LogoutAll(LogoutAllView):
+    def get_post_response(self, request):
+        return Response("successfully revoked all sessions", status=status.HTTP_200_OK)

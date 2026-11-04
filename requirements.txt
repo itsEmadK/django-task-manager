@@ -5,3 +5,4 @@ django-stubs
 djangorestframework-stubs
 python-dotenv
 django-filter
+django-rest-knox
