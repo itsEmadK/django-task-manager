@@ -1,4 +1,6 @@
 from django.db.models.query import QuerySet
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
 from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveUpdateDestroyAPIView,
@@ -16,8 +18,13 @@ from tasks.serializers import CategorySerializer, TaskSerializer
 class CategoryList(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = CategorySerializer
+    filter_backends = [SearchFilter]
+    search_fields = ["name"]
 
     def get_queryset(self) -> QuerySet:
+        if getattr(self, "swagger_fake_view", False):
+            return Category.objects.none()
+
         return Category.objects.filter(owner=self.request.user)
 
     def perform_create(self, serializer) -> None:
@@ -53,8 +60,19 @@ class DeleteCategoryTasks(APIView):
 class TaskList(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = TaskSerializer
+    filter_backends = [SearchFilter, DjangoFilterBackend]
+    search_fields = ["title", "notes"]
+    filterset_fields = {
+        "due_date": ["exact", "lte", "gte"],
+        "priority": ["exact"],
+        "status": ["exact"],
+    }
 
     def get_queryset(self) -> QuerySet:
+        # Just so drf-spectacular can find the filters
+        if getattr(self, "swagger_fake_view", False):
+            return Task.objects.none()
+
         return Task.objects.filter(owner=self.request.user)
 
     def perform_create(self, serializer) -> None:
@@ -81,6 +99,13 @@ class TaskDetail(RetrieveUpdateDestroyAPIView):
 class CategoryTasks(ListCreateAPIView):
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [SearchFilter, DjangoFilterBackend]
+    search_fields = ["title", "notes"]
+    filterset_fields = {
+        "due_date": ["exact", "lte", "gte"],
+        "priority": ["exact"],
+        "status": ["exact"],
+    }
 
     def get_category(self):
         category_id = self.kwargs["category_id"]
@@ -91,6 +116,10 @@ class CategoryTasks(ListCreateAPIView):
         return category
 
     def get_queryset(self) -> QuerySet:
+        # Just so drf-spectacular can find the filters
+        if getattr(self, "swagger_fake_view", False):
+            return Task.objects.none()
+
         category = self.get_category()
         return Task.objects.filter(category=category)
 
