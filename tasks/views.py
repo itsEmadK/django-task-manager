@@ -1,6 +1,6 @@
 from django.db.models.query import QuerySet
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveUpdateDestroyAPIView,
@@ -18,8 +18,9 @@ from tasks.serializers import CategorySerializer, TaskSerializer
 class CategoryList(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = CategorySerializer
-    filter_backends = [SearchFilter]
+    filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ["name"]
+    ordering_fields = ["id", "name"]
 
     def get_queryset(self) -> QuerySet:
         if getattr(self, "swagger_fake_view", False):
@@ -60,13 +61,21 @@ class DeleteCategoryTasks(APIView):
 class TaskList(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = TaskSerializer
-    filter_backends = [SearchFilter, DjangoFilterBackend]
+    filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
     search_fields = ["title", "notes"]
     filterset_fields = {
         "due_date": ["exact", "lte", "gte"],
         "priority": ["exact"],
         "status": ["exact"],
     }
+    ordering_fields = [
+        "id",
+        "title",
+        "due_date",
+        "priority",
+        "status",
+        "category",
+    ]
 
     def get_queryset(self) -> QuerySet:
         # Just so drf-spectacular can find the filters
@@ -99,13 +108,20 @@ class TaskDetail(RetrieveUpdateDestroyAPIView):
 class CategoryTasks(ListCreateAPIView):
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [SearchFilter, DjangoFilterBackend]
+    filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
     search_fields = ["title", "notes"]
     filterset_fields = {
         "due_date": ["exact", "lte", "gte"],
         "priority": ["exact"],
         "status": ["exact"],
     }
+    ordering_fields = [
+        "id",
+        "title",
+        "due_date",
+        "priority",
+        "status",
+    ]
 
     def get_category(self):
         category_id = self.kwargs["category_id"]
