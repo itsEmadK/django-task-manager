@@ -149,6 +149,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "knox.auth.TokenAuthentication",
     ],
+    "DEFAULT_PAGINATION_CLASS": "core.pagination.StandardResultsSetPagination",
 }
 
 REST_KNOX = {
