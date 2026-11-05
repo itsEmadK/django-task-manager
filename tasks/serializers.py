@@ -19,7 +19,14 @@ class CategorySerializer(ModelSerializer):
 class TaskSummarySerializer(ModelSerializer):
     class Meta:
         model = Task
-        fields = ["id", "title", "category", "priority", "due_date"]
+        fields = [
+            "id",
+            "title",
+            "category",
+            "priority",
+            "status",
+            "due_date",
+        ]
 
 
 class TaskSerializer(ModelSerializer):
@@ -52,6 +59,7 @@ class TaskSerializer(ModelSerializer):
             "category",
             "category_id",
             "priority",
+            "status",
             "due_date",
             "dependents",
             "prerequisites",

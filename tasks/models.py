@@ -32,6 +32,11 @@ class Task(models.Model):
         HIGH = 3, "High"
         URGENT = 4, "Urgent"
 
+    class Status(models.TextChoices):
+        NOT_STARTED = "not_started", "Not started"
+        DOING = "doing", "Doing"
+        DONE = "done", "Done"
+
     owner = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -51,6 +56,11 @@ class Task(models.Model):
     priority = models.IntegerField(
         choices=Priority,
         default=Priority.NONE,
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status,
+        default=Status.NOT_STARTED,
     )
     prerequisites = models.ManyToManyField(
         to="self",
