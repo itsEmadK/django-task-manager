@@ -2,7 +2,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from knox.models import AuthToken
-from knox.views import LogoutAllView, LogoutView
+from knox.views import LogoutAllView as KnoxLogoutAllView
+from knox.views import LogoutView as KnoxLogoutView
 from rest_framework import status
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import ListAPIView
@@ -29,7 +30,7 @@ from accounts.serializers import (
 )
 
 
-class RegisterUser(APIView):
+class RegisterUserView(APIView):
     permission_classes = [AllowAny]
     renderer_classes = [JSONRenderer]
     parser_classes = [JSONParser]
@@ -61,7 +62,7 @@ class RegisterUser(APIView):
         return Response(data=response_serializer.data, status=status.HTTP_201_CREATED)
 
 
-class Login(APIView):
+class LoginView(APIView):
     permission_classes = [AllowAny]
     renderer_classes = [JSONRenderer]
     parser_classes = [JSONParser]
@@ -87,7 +88,7 @@ class Login(APIView):
         return Response(data=response_serializer.data)
 
 
-class UserList(ListAPIView):
+class UserListView(ListAPIView):
     renderer_classes = [JSONRenderer]
     parser_classes = [JSONParser]
     permission_classes = [IsAdminUser]
@@ -97,7 +98,7 @@ class UserList(ListAPIView):
     filterset_class = UserFilter
 
 
-class UserDetail(APIView):
+class UserDetailView(APIView):
     renderer_classes = [JSONRenderer]
     parser_classes = [JSONParser]
 
@@ -152,7 +153,7 @@ class UserDetail(APIView):
         return Response(data=UserSerializer(instance=user).data)  # type: ignore
 
 
-class CurrentUser(APIView):
+class CurrentUserView(APIView):
     renderer_classes = [JSONRenderer]
     parser_classes = [JSONParser]
     permission_classes = [IsAuthenticated]
@@ -163,11 +164,11 @@ class CurrentUser(APIView):
         return Response(data=serializer.data)
 
 
-class Logout(LogoutView):
+class LogoutView(KnoxLogoutView):
     def get_post_response(self, request):
         return Response("successfully logged out", status=status.HTTP_200_OK)
 
 
-class LogoutAll(LogoutAllView):
+class LogoutAllView(KnoxLogoutAllView):
     def get_post_response(self, request):
         return Response("successfully revoked all sessions", status=status.HTTP_200_OK)

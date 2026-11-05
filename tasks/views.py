@@ -15,7 +15,7 @@ from tasks.models import Category, Task
 from tasks.serializers import CategorySerializer, TaskSerializer
 
 
-class CategoryList(ListCreateAPIView):
+class CategoryListView(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = CategorySerializer
     filter_backends = [SearchFilter, OrderingFilter]
@@ -32,7 +32,7 @@ class CategoryList(ListCreateAPIView):
         serializer.save(owner=self.request.user)
 
 
-class CategoryDetail(RetrieveUpdateDestroyAPIView):
+class CategoryDetailView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsOwner]
     serializer_class = CategorySerializer
     lookup_url_kwarg = "id"
@@ -42,7 +42,7 @@ class CategoryDetail(RetrieveUpdateDestroyAPIView):
         return Category.objects.filter(owner=self.request.user)
 
 
-class DeleteCategoryTasks(APIView):
+class DeleteCategoryTasksView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_category(self, category_id):
@@ -58,7 +58,7 @@ class DeleteCategoryTasks(APIView):
         return Response(data={"deleted_tasks_count": num_deleted})
 
 
-class TaskList(ListCreateAPIView):
+class TaskListView(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = TaskSerializer
     filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
@@ -94,7 +94,7 @@ class TaskList(ListCreateAPIView):
         return context
 
 
-class TaskDetail(RetrieveUpdateDestroyAPIView):
+class TaskDetailView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsOwner]
     owner_field = "owner"
     serializer_class = TaskSerializer
@@ -105,7 +105,7 @@ class TaskDetail(RetrieveUpdateDestroyAPIView):
         return Task.objects.filter(owner=self.request.user)
 
 
-class CategoryTasks(ListCreateAPIView):
+class CategoryTasksView(ListCreateAPIView):
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
