@@ -82,7 +82,7 @@ class TaskListView(ListCreateAPIView):
         if getattr(self, "swagger_fake_view", False):
             return Task.objects.none()
 
-        return Task.objects.filter(owner=self.request.user)
+        return Task.objects.select_related("category").filter(owner=self.request.user)
 
     def perform_create(self, serializer) -> None:
         serializer.save(owner=self.request.user)
