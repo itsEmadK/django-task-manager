@@ -1,3 +1,4 @@
+from django.db.models import Count
 from django.db.models.query import QuerySet
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
@@ -20,13 +21,19 @@ class CategoryListView(ListCreateAPIView):
     serializer_class = CategorySerializer
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ["name"]
-    ordering_fields = ["id", "name"]
+    ordering_fields = [
+        "id",
+        "name",
+        "tasks_count",
+    ]
 
     def get_queryset(self) -> QuerySet:
         if getattr(self, "swagger_fake_view", False):
             return Category.objects.none()
 
-        return Category.objects.filter(owner=self.request.user)
+        return Category.objects.filter(owner=self.request.user).annotate(
+            tasks_count=Count("task")
+        )
 
     def perform_create(self, serializer) -> None:
         serializer.save(owner=self.request.user)

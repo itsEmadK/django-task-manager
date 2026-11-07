@@ -1,5 +1,5 @@
 from rest_framework.exceptions import ValidationError
-from rest_framework.fields import SerializerMethodField
+from rest_framework.fields import IntegerField, SerializerMethodField
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import ModelSerializer
 
@@ -8,11 +8,14 @@ from tasks.models import Category, Task
 
 class CategorySerializer(ModelSerializer):
 
+    tasks_count = IntegerField(read_only=True)
+
     class Meta:
         model = Category
         fields = [
             "id",
             "name",
+            "tasks_count",
         ]
 
 
