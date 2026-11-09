@@ -65,14 +65,3 @@ class User(AbstractBaseUser):
             expires_at=expires_at,
         )
         return code
-
-
-class OTP(models.Model):
-    user = models.OneToOneField(
-        User,
-        on_delete=models.CASCADE,
-        blank=False,
-    )
-    code_hash = models.CharField(max_length=256, blank=False)
-    expires_at = models.DateTimeField(blank=False)
-    is_used = models.BooleanField(blank=True, default=False)
