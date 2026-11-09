@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema
 from knox.models import AuthToken
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -10,6 +11,7 @@ from otp.serializers import (
 
 
 class VerifyEmailOTPView(APIView):
+    permission_classes = [AllowAny]
 
     @extend_schema(
         request=VerifyEmailOTPRequestSerializer,
