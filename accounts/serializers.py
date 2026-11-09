@@ -4,11 +4,14 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from knox.models import AuthToken
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.exceptions import ValidationError as DrfValidationError
-from rest_framework.fields import CharField, DateTimeField, EmailField
+from rest_framework.fields import CharField, DateTimeField, EmailField, UUIDField
 from rest_framework.serializers import ModelSerializer, Serializer
 from rest_framework.validators import UniqueValidator
 
 from accounts.models import User
+
+
+from otp.models import OTP
 
 
 def drf_validate_password(value):
@@ -29,6 +32,7 @@ class UserSerializer(ModelSerializer):
             "name",
             "age",
             "password",
+            "email_verified",
         ]
         extra_kwargs = {
             "id": {
@@ -46,6 +50,9 @@ class UserSerializer(ModelSerializer):
             "password": {
                 "required": False,
                 "write_only": True,
+            },
+            "email_verified": {
+                "read_only": True,
             },
         }
 
@@ -82,15 +89,14 @@ class RegisterRequestSerializer(Serializer):
             raise DrfValidationError("password is required")
 
         user: User = User.objects.create_user(email=email, password=password)
-        token, token_key = AuthToken.objects.create(user=user)  # type: ignore
+        otp_code, otp = OTP.objects.generate(user=user)
 
-        return (user, token, token_key)
+        return (user, otp, otp_code)
 
 
 class RegisterResponseSerializer(Serializer):
     user = UserSerializer(read_only=True)  # type: ignore
-    token = CharField(read_only=True)
-    expiry = DateTimeField(read_only=True)
+    otp_challenge_id = UUIDField(read_only=True)
 
 
 class LoginRequestSerializer(Serializer):

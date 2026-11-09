@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.mail import send_mail
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from knox.models import AuthToken
@@ -51,12 +52,19 @@ class RegisterUserView(APIView):
         )
         request_serializer.is_valid(raise_exception=True)
 
-        user, token, token_key = request_serializer.save()
+        user, otp, otp_code = request_serializer.save()
+
+        send_mail(
+            subject="Email verification code",
+            from_email="info@taskmgr.com",
+            message=f"here is your temporary code: {otp_code}",
+            recipient_list=[user.email],
+        )
+
         response_serializer = RegisterResponseSerializer(
             instance={
                 "user": user,
-                "token": token_key,
-                "expiry": token.expiry,
+                "otp_challenge_id": otp.challenge_id,
             },
         )
         return Response(data=response_serializer.data, status=status.HTTP_201_CREATED)
