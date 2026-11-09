@@ -15,6 +15,8 @@ class OTPManager(models.Manager):
         user: User,
         expiry: timedelta = timedelta(minutes=10),
     ):
+        user.otp.delete()  # type: ignore
+
         code = secrets.randbelow(900_000) + 100_000
         hashed = make_password(password=str(code))
         expires_at = timezone.now() + expiry
@@ -37,6 +39,8 @@ class OTP(models.Model):
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
+        related_name="otp",
+        related_query_name="otp",
         blank=False,
     )
     code_hash = models.CharField(max_length=256, blank=False)
