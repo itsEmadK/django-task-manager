@@ -83,14 +83,19 @@ class LoginView(APIView):
         request_serializer = LoginRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
 
-        user = request_serializer.validated_data["user"]
-        token, token_key = AuthToken.objects.create(user=user)  # type: ignore
+        user, otp_code, otp = request_serializer.save()  # type: ignore
+
+        send_mail(
+            subject="Email verification code",
+            from_email="info@taskmgr.com",
+            message=f"here is your temporary code: {otp_code}",
+            recipient_list=[user.email],
+        )
 
         response_serializer = LoginResponseSerializer(
             instance={
                 "user": user,
-                "token": token_key,
-                "expiry": token.expiry,
+                "otp_challenge_id": otp.challenge_id,
             }
         )
         return Response(data=response_serializer.data)

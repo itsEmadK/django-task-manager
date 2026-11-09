@@ -1,7 +1,5 @@
-from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from knox.models import AuthToken
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.exceptions import ValidationError as DrfValidationError
 from rest_framework.fields import CharField, DateTimeField, EmailField, UUIDField
@@ -9,8 +7,6 @@ from rest_framework.serializers import ModelSerializer, Serializer
 from rest_framework.validators import UniqueValidator
 
 from accounts.models import User
-
-
 from otp.models import OTP
 
 
@@ -103,27 +99,21 @@ class LoginRequestSerializer(Serializer):
     email = EmailField(
         required=True,
     )
-    password = CharField(
-        write_only=True,
-        validators=[drf_validate_password],
-    )
 
     def validate(self, attrs):
-        request = self.context.get("request")
-        user = authenticate(
-            request=request,
-            email=attrs["email"],
-            password=attrs["password"],
-        )
+        user_exists = User.objects.filter(email=attrs["email"]).exists()
 
-        if user is None:
-            raise AuthenticationFailed("Invalid email or password")
+        if not user_exists:
+            raise AuthenticationFailed("User does not exist")
 
-        attrs["user"] = user
         return attrs
+
+    def save(self):
+        user = User.objects.get(email=self.validated_data["email"])
+        otp_code, otp = OTP.objects.generate(user=user)
+        return user, otp_code, otp
 
 
 class LoginResponseSerializer(Serializer):
-    user = UserSerializer(read_only=True)  # type: ignore
-    token = CharField(read_only=True)  # type: ignore
-    expiry = DateTimeField(read_only=True)
+     user = UserSerializer(read_only=True)  # type: ignore
+     otp_challenge_id = UUIDField(read_only=True)
