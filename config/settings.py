@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "accounts.apps.AccountsConfig",
     "tasks.apps.TasksConfig",
+    "otp.apps.OTPConfig",
     "rest_framework",
     "drf_spectacular",
     "django_filters",
