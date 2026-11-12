@@ -133,6 +133,7 @@ class VerifyOTPRequestSerializer(Serializer):
         token, token_key = AuthToken.objects.create(user=user)  # type: ignore
 
         otp.is_used = True
+        otp.save()
 
         return user, token.expiry, token_key
 
