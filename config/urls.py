@@ -26,6 +26,7 @@ from accounts.views import (
     RegisterUserView,
     UserDetailView,
     UserListView,
+    VerifyRegisterOTPView,
 )
 from tasks.views import (
     CategoryDetailView,
@@ -38,6 +39,7 @@ from tasks.views import (
 
 urlpatterns = [
     path("register/", RegisterUserView.as_view()),
+    path("verify-email/", VerifyRegisterOTPView.as_view()),
     path("login/", LoginView.as_view()),
     path("logout/", LogoutView.as_view()),
     path("logoutall/", LogoutAllView.as_view()),

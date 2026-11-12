@@ -2,13 +2,16 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from knox.models import AuthToken
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework.exceptions import ValidationError as DrfValidationError
-from rest_framework.fields import CharField, DateTimeField, EmailField
+from rest_framework.fields import CharField, DateTimeField, EmailField, IntegerField
+from rest_framework.fields import UUIDField
+from rest_framework.generics import get_object_or_404
 from rest_framework.serializers import ModelSerializer, Serializer
 from rest_framework.validators import UniqueValidator
 
 from accounts.models import User
+from otp.models import OTP
 
 
 def drf_validate_password(value):
@@ -82,15 +85,57 @@ class RegisterRequestSerializer(Serializer):
             raise DrfValidationError("password is required")
 
         user: User = User.objects.create_user(email=email, password=password)
-        token, token_key = AuthToken.objects.create(user=user)  # type: ignore
 
-        return (user, token, token_key)
+        return user
 
 
 class RegisterResponseSerializer(Serializer):
+    challenge_id = UUIDField(read_only=True)
+
+
+class VerifyRegisterOTPRequestSerializer(Serializer):
+    challenge_id = UUIDField(
+        write_only=True,
+        required=True,
+    )
+    code = IntegerField(
+        write_only=True,
+        required=True,
+        min_value=100_000,
+        max_value=999_999,
+    )
+
+    def validate(self, attrs):
+        challenge_id = attrs["challenge_id"]
+        otp_exists = OTP.objects.filter(challenge_id=challenge_id).exists()
+
+        if not otp_exists:
+            raise ValidationError("Challenge ID is invalid")
+
+        otp: OTP = OTP.objects.get(challenge_id=challenge_id)
+        code = attrs["code"]
+
+        if not otp.check_code(plain_code=code):
+            raise ValidationError("Code is invalid")
+
+        attrs["otp"] = otp
+        return attrs
+
+    def save(self):
+        otp = self.validated_data["otp"]
+
+        user = User.objects.get(email=otp.email)
+        user.email_verified = True
+        user.save()
+        token, token_key = AuthToken.objects.create(user=user)  # type: ignore
+
+        return user, token.expiry, token_key
+
+
+class VerifyRegisterOTPResponseSerializer(Serializer):
     user = UserSerializer(read_only=True)  # type: ignore
     token = CharField(read_only=True)
-    expiry = DateTimeField(read_only=True)
+    token_expiry = DateTimeField(read_only=True)
 
 
 class LoginRequestSerializer(Serializer):
