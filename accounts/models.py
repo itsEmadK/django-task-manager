@@ -41,6 +41,7 @@ class User(AbstractBaseUser):
         validators=[MinValueValidator(18), MaxValueValidator(120)],
     )
     is_staff = models.BooleanField(default=False)
+    email_verified = models.BooleanField(default=False)
 
     objects = UserManager()
 
