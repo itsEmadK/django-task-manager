@@ -27,8 +27,8 @@ from accounts.serializers import (
     RegisterRequestSerializer,
     RegisterResponseSerializer,
     UserSerializer,
-    VerifyRegisterOTPRequestSerializer,
-    VerifyRegisterOTPResponseSerializer,
+    VerifyOTPRequestSerializer,
+    VerifyOTPResponseSerializer,
 )
 from otp.services import OTPServices
 
@@ -67,15 +67,15 @@ class RegisterUserView(APIView):
 
 class VerifyRegisterOTPView(APIView):
     @extend_schema(
-        request=VerifyRegisterOTPRequestSerializer,
-        responses=[VerifyRegisterOTPResponseSerializer],
+        request=VerifyOTPRequestSerializer,
+        responses=[VerifyOTPResponseSerializer],
     )
     def post(self, request):
-        request_serializer = VerifyRegisterOTPRequestSerializer(data=request.data)
+        request_serializer = VerifyOTPRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
 
         user, token_expiry, token_key = request_serializer.save()
-        response_serializer = VerifyRegisterOTPResponseSerializer(
+        response_serializer = VerifyOTPResponseSerializer(
             instance={
                 "user": user,
                 "token": token_key,

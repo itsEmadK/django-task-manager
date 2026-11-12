@@ -93,7 +93,7 @@ class RegisterResponseSerializer(Serializer):
     challenge_id = UUIDField(read_only=True)
 
 
-class VerifyRegisterOTPRequestSerializer(Serializer):
+class VerifyOTPRequestSerializer(Serializer):
     challenge_id = UUIDField(
         write_only=True,
         required=True,
@@ -107,7 +107,10 @@ class VerifyRegisterOTPRequestSerializer(Serializer):
 
     def validate(self, attrs):
         challenge_id = attrs["challenge_id"]
-        otp_exists = OTP.objects.filter(challenge_id=challenge_id).exists()
+        otp_exists = OTP.objects.filter(
+            challenge_id=challenge_id,
+            is_used=False,
+        ).exists()
 
         if not otp_exists:
             raise ValidationError("Challenge ID is invalid")
@@ -129,10 +132,12 @@ class VerifyRegisterOTPRequestSerializer(Serializer):
         user.save()
         token, token_key = AuthToken.objects.create(user=user)  # type: ignore
 
+        otp.is_used = True
+
         return user, token.expiry, token_key
 
 
-class VerifyRegisterOTPResponseSerializer(Serializer):
+class VerifyOTPResponseSerializer(Serializer):
     user = UserSerializer(read_only=True)  # type: ignore
     token = CharField(read_only=True)
     token_expiry = DateTimeField(read_only=True)
