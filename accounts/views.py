@@ -99,17 +99,18 @@ class LoginView(APIView):
         request_serializer = LoginRequestSerializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
 
-        user = request_serializer.validated_data["user"]
-        token, token_key = AuthToken.objects.create(user=user)  # type: ignore
-
+        email = request_serializer.validated_data["email"]
+        challenge_id = OTPServices.request_otp(email=email)
         response_serializer = LoginResponseSerializer(
             instance={
-                "user": user,
-                "token": token_key,
-                "expiry": token.expiry,
+                "challenge_id": challenge_id,
             }
         )
         return Response(data=response_serializer.data)
+
+
+class VerifyLoginOTPView(VerifyRegisterOTPView):
+    pass
 
 
 class UserListView(ListAPIView):

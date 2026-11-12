@@ -142,27 +142,17 @@ class LoginRequestSerializer(Serializer):
     email = EmailField(
         required=True,
     )
-    password = CharField(
-        write_only=True,
-        validators=[drf_validate_password],
-    )
 
     def validate(self, attrs):
-        request = self.context.get("request")
-        user = authenticate(
-            request=request,
-            email=attrs["email"],
-            password=attrs["password"],
-        )
+        email = attrs["email"]
 
-        if user is None:
-            raise AuthenticationFailed("Invalid email or password")
+        user_exists = User.objects.filter(email=email).exists()
 
-        attrs["user"] = user
+        if not user_exists:
+            raise ValidationError("User does not exist")
+
         return attrs
 
 
-class LoginResponseSerializer(Serializer):
-    user = UserSerializer(read_only=True)  # type: ignore
-    token = CharField(read_only=True)  # type: ignore
-    expiry = DateTimeField(read_only=True)
+class LoginResponseSerializer(RegisterResponseSerializer):
+    pass
