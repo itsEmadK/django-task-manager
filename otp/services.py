@@ -7,7 +7,7 @@ class OTPServices:
 
     @staticmethod
     def request_otp(email):
-        otp, otp_code = OTP.objects.generate()
+        otp, otp_code = OTP.objects.generate(email=email)
 
         send_mail(
             subject="Task Manager one time code",
