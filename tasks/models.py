@@ -21,6 +21,15 @@ class Category(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                "owner",
+                Lower("name"),
+                name="unique_category_name_per_user",
+            ),
+        ]
+
 
 class Task(models.Model):
 

@@ -19,6 +19,17 @@ class CategorySerializer(ModelSerializer):
             "tasks_count",
         ]
 
+    def validate_name(self, value):
+        user = self.context["user"]
+
+        category_name_exists = Category.objects.filter(
+            owner=user,
+            name__iexact=value,
+        ).exists()
+
+        if category_name_exists:
+            raise ValidationError("this category name has been used before")
+
 
 class TaskSummarySerializer(ModelSerializer):
     class Meta:
