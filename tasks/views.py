@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.permissions import IsOwner
+from core.permissions import IsOwner
 from tasks.models import Category, Task
 from tasks.serializers import CategorySerializer, TaskSerializer
 
@@ -103,7 +103,6 @@ class TaskListView(ListCreateAPIView):
 
 class TaskDetailView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsOwner]
-    owner_field = "owner"
     serializer_class = TaskSerializer
     lookup_url_kwarg = "id"
     lookup_field = "pk"
