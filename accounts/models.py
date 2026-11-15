@@ -33,11 +33,11 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser):
     email = models.EmailField(unique=True)
     name = models.CharField(
-        max_length=150, blank=False, validators=[MinLengthValidator(3)]
+        max_length=150,
+        validators=[MinLengthValidator(3)],
     )
     age = models.PositiveSmallIntegerField(
-        blank=True,
-        default=18,
+        null=True,
         validators=[MinValueValidator(18), MaxValueValidator(120)],
     )
     is_staff = models.BooleanField(default=False)

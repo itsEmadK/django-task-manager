@@ -11,13 +11,12 @@ def validate_due_date_in_the_future(value):
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=150, blank=False)
+    name = models.CharField(max_length=150)
     owner = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name="categories",
         related_query_name="category",
-        blank=False,
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -26,7 +25,6 @@ class Category(models.Model):
 class Task(models.Model):
 
     class Priority(models.IntegerChoices):
-        NONE = 0, "None"
         LOW = 1, "Low"
         MEDIUM = 2, "Medium"
         HIGH = 3, "High"
@@ -42,20 +40,16 @@ class Task(models.Model):
         on_delete=models.CASCADE,
         related_name="tasks",
         related_query_name="task",
-        blank=False,
     )
-    title = models.CharField(
-        max_length=150,
-        blank=False,
-    )
-    notes = models.TextField(blank=True)
+    title = models.CharField(max_length=150)
+    notes = models.TextField(null=True)
     due_date = models.DateTimeField(
-        blank=True,
+        null=True,
         validators=[validate_due_date_in_the_future],
     )
     priority = models.IntegerField(
         choices=Priority,
-        default=Priority.NONE,
+        null=True,
     )
     status = models.CharField(
         max_length=20,
@@ -65,20 +59,14 @@ class Task(models.Model):
     prerequisites = models.ManyToManyField(
         to="self",
         symmetrical=False,
-        blank=True,
+        null=True,
         related_name="dependents",
         related_query_name="dependent",
     )
     category = models.ForeignKey(
         Category,
         on_delete=models.CASCADE,
-        blank=True,
         null=True,
         related_name="tasks",
         related_query_name="task",
     )
-
-    def clean(self):
-        super().clean()
-        if self.prerequisites.filter(id=self.id).exists():
-            raise exceptions.ValidationError("task can't be a prerequisite of itself")
