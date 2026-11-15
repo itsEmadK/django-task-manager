@@ -5,6 +5,7 @@ from django.core.validators import (
     MinValueValidator,
 )
 from django.db import models
+from django.db.models.functions import Lower
 
 
 class UserManager(BaseUserManager):
@@ -45,3 +46,11 @@ class User(AbstractBaseUser):
     objects = UserManager()
 
     USERNAME_FIELD = "email"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                Lower("email"),
+                name="unique_email_per_user",
+            )
+        ]
