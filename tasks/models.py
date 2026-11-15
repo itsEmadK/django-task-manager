@@ -1,7 +1,7 @@
 from django.core import exceptions
 from django.db import models
+from django.db.models.functions import Lower
 from django.utils import timezone
-
 from accounts.models import User
 
 
@@ -70,3 +70,12 @@ class Task(models.Model):
         related_name="tasks",
         related_query_name="task",
     )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                Lower("title"),
+                "owner",
+                name="unique_task_title_per_user",
+            ),
+        ]
