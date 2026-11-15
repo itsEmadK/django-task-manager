@@ -1,5 +1,6 @@
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
-from rest_framework.fields import IntegerField, SerializerMethodField
+from rest_framework.fields import CharField, IntegerField, SerializerMethodField
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import ModelSerializer
 
@@ -75,15 +76,26 @@ class TaskSerializer(ModelSerializer):
     def get_dependents(self, obj):
         return TaskSummarySerializer(obj.dependents.all(), many=True).data  # type: ignore
 
-    def validate(self, attrs):
+    def validate_title(self, value):
+        user = self.context["user"]
+        same_title_exists = Task.objects.filter(
+            owner=user,
+            title__iexact=value,
+        ).exists()
+
+        if same_title_exists:
+            raise ValidationError("this title has been used before")
+
+    def validate_prerequisite_ids(self, value):
         # TODO: make sure to later prevent circular dependencies
-
-        prerequisites = attrs.get("prerequisites", [])
-
-        if self.instance and self.instance in prerequisites:
+        if self.instance and self.instance in value:
             raise ValidationError("task can't depend on itself")
 
-        return attrs
+        return value
+
+    def validate_due_date(self, value):
+        if value < timezone.now():
+            raise ValidationError("due date must be in the future")
 
     def get_fields(self):
         fields = super().get_fields()
