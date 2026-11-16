@@ -20,7 +20,6 @@ from rest_framework.views import APIView
 
 from accounts.filters import UserFilter
 from accounts.models import User
-from accounts.permissions import IsSelf
 from accounts.serializers import (
     LoginRequestSerializer,
     LoginResponseSerializer,
@@ -104,7 +103,7 @@ class UserDetailView(APIView):
 
     def get_permissions(self):
         if self.request.method in ["GET", "PUT", "PATCH"]:
-            permission_classes = [IsAuthenticated, IsSelf]
+            permission_classes = [IsAuthenticated]
         elif self.request.method == "DELETE":
             permission_classes = [IsAdminUser]
 
