@@ -1,3 +1,6 @@
+from collections.abc import Mapping
+from typing import Any
+
 from django.db.models import Count
 from django.db.models.query import QuerySet
 from django_filters.rest_framework import DjangoFilterBackend
@@ -9,11 +12,16 @@ from rest_framework.generics import (
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 
 from core.permissions import IsOwner
 from tasks.models import Category, Task
-from tasks.serializers import CategorySerializer, TaskSerializer
+from tasks.serializers import (
+    CategorySerializer,
+    ReadTaskSerializer,
+    WriteTaskSerializer,
+)
 
 
 class CategoryListView(ListCreateAPIView):
@@ -67,7 +75,6 @@ class DeleteCategoryTasksView(APIView):
 
 class TaskListView(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = TaskSerializer
     filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
     search_fields = ["title", "notes"]
     filterset_fields = {
@@ -91,8 +98,11 @@ class TaskListView(ListCreateAPIView):
 
         return Task.objects.select_related("category").filter(owner=self.request.user)
 
-    def perform_create(self, serializer) -> None:
-        serializer.save(owner=self.request.user)
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return ReadTaskSerializer
+        else:
+            return WriteTaskSerializer
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -100,19 +110,62 @@ class TaskListView(ListCreateAPIView):
 
         return context
 
+    def create(self, request):
+        serializer = self.get_serializer(
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        response_serializer = ReadTaskSerializer(
+            instance=serializer.instance,  # type: ignore
+            context=self.get_serializer_context(),  # type: ignore
+        )
+
+        return Response(data=response_serializer.data)
+
 
 class TaskDetailView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsOwner]
-    serializer_class = TaskSerializer
     lookup_url_kwarg = "id"
     lookup_field = "pk"
 
     def get_queryset(self) -> QuerySet:
         return Task.objects.filter(owner=self.request.user)
 
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return ReadTaskSerializer
+        else:
+            return WriteTaskSerializer
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx["user"] = self.request.user  # type: ignore
+        return ctx
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+
+        serializer = self.get_serializer(
+            instance=instance,
+            data=request.data,
+            partial=partial,
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        response_serializer = ReadTaskSerializer(
+            instance=serializer.instance,  # type: ignore
+            context=self.get_serializer_context(),  # type: ignore
+        )
+
+        return Response(data=response_serializer.data)
+
 
 class CategoryTasksView(ListCreateAPIView):
-    serializer_class = TaskSerializer
+    serializer_class = ReadTaskSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
     search_fields = ["title", "notes"]

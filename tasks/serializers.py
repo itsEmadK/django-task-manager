@@ -1,6 +1,6 @@
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
-from rest_framework.fields import CharField, IntegerField, SerializerMethodField
+from rest_framework.fields import IntegerField, SerializerMethodField
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import ModelSerializer
 
@@ -44,25 +44,13 @@ class TaskSummarySerializer(ModelSerializer):
         ]
 
 
-class TaskSerializer(ModelSerializer):
+class ReadTaskSerializer(ModelSerializer):
+    """Read-only serializer responsible for reading tasks"""
 
-    category = CategorySerializer(read_only=True)  # type: ignore
-    category_id = PrimaryKeyRelatedField(
-        write_only=True,
-        queryset=Category.objects.all(),
-        required=False,
-        source="category",
+    prerequisites = TaskSummarySerializer(
+        read_only=True,  # type: ignore
+        many=True,  # type: ignore
     )
-
-    prerequisites = SerializerMethodField(read_only=True)
-    prerequisite_ids = PrimaryKeyRelatedField(
-        queryset=Task.objects.all(),
-        write_only=True,
-        required=False,
-        many=True,
-        source="prerequisites",
-    )
-
     dependents = SerializerMethodField(read_only=True)
 
     class Meta:
@@ -72,20 +60,57 @@ class TaskSerializer(ModelSerializer):
             "title",
             "notes",
             "category",
-            "category_id",
             "priority",
             "status",
             "due_date",
             "dependents",
             "prerequisites",
-            "prerequisite_ids",
         ]
-
-    def get_prerequisites(self, obj):
-        return TaskSummarySerializer(obj.prerequisites.all(), many=True).data  # type: ignore
 
     def get_dependents(self, obj):
         return TaskSummarySerializer(obj.dependents.all(), many=True).data  # type: ignore
+
+    def save(self):
+        raise NotImplementedError("this serializer is read-only")
+
+
+class WriteTaskSerializer(ModelSerializer):
+    """Responsible for creating/updating tasks; requires 'user' in its context"""
+
+    prerequisites = PrimaryKeyRelatedField(
+        queryset=Task.objects.none(),
+        many=True,
+    )
+
+    category = PrimaryKeyRelatedField(
+        queryset=Category.objects.none(),
+    )
+
+    class Meta:
+        model = Task
+        fields = [
+            "title",
+            "notes",
+            "category",
+            "priority",
+            "status",
+            "due_date",
+            "prerequisites",
+        ]
+
+    def get_fields(self):
+        fields = super().get_fields()
+        user = self.context["user"]
+
+        # The condition is here just to quiet swagger
+        if user and user.is_authenticated:
+            fields["prerequisites"].queryset = Task.objects.filter(owner=user)  # type: ignore
+            fields["category"].queryset = Category.objects.filter(owner=user)  # type: ignore
+        else:
+            fields["prerequisites"].queryset = Task.objects.none()  # type: ignore
+            fields["category"].queryset = Category.objects.none()  # type: ignore
+
+        return fields
 
     def validate_title(self, value):
         user = self.context["user"]
@@ -97,36 +122,21 @@ class TaskSerializer(ModelSerializer):
         if same_title_exists:
             raise ValidationError("this title has been used before")
 
-    def validate_prerequisite_ids(self, value):
-        # TODO: make sure to later prevent circular dependencies
-        if self.instance and self.instance in value:
-            raise ValidationError("task can't depend on itself")
-
         return value
 
     def validate_due_date(self, value):
         if value < timezone.now():
             raise ValidationError("due date must be in the future")
 
-    def get_fields(self):
-        fields = super().get_fields()
+        return value
 
-        user = self.context.get("user", None)
+    def validate_prerequisites(self, value):
+        instance = self.instance
+        if instance and instance in value:
+            raise ValidationError("a task can not be a prerequisite of itself")
 
-        # Just to get drf-spectacular off my back
-        if user and user.is_authenticated:
-            fields["prerequisite_ids"].queryset = Task.objects.filter(owner=user)  # type: ignore
-            fields["category_id"].queryset = Category.objects.filter(owner=user)  # type: ignore
-        else:
-            fields["prerequisite_ids"].queryset = Task.objects.none()  # type: ignore
-            fields["category_id"].queryset = Category.objects.none()  # type: ignore
+        return value
 
-        category_determined = self.context.get("category_determined", False)
-        if category_determined:
-            fields.pop("category_id")
-
-        include_category = self.context.get("include_category", True)
-        if not include_category:
-            fields.pop("category")
-
-        return fields
+    def save(self):
+        user = self.context["user"]
+        return super().save(owner=user)
