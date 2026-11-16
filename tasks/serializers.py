@@ -36,6 +36,8 @@ class CategorySerializer(ModelSerializer):
 
 
 class TaskSummarySerializer(ModelSerializer):
+    """Used for compact task representation"""
+
     class Meta:
         model = Task
         fields = [
