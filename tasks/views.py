@@ -40,7 +40,7 @@ class CategoryListView(ListCreateAPIView):
         )
 
     def get_serializer_context(self):
-        context = self.get_serializer_context()
+        context = super().get_serializer_context()
         context["user"] = self.request.user  # type: ignore
         return context
 
@@ -163,7 +163,6 @@ class TaskDetailView(RetrieveUpdateDestroyAPIView):
 
 
 class CategoryTasksView(ListCreateAPIView):
-    serializer_class = ReadTaskSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
     search_fields = ["title", "notes"]
@@ -196,12 +195,31 @@ class CategoryTasksView(ListCreateAPIView):
         category = self.get_category()
         return Task.objects.filter(category=category)
 
-    def perform_create(self, serializer) -> None:
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return ReadTaskSerializer
+        else:
+            return WriteTaskSerializer
+
+    def create(self, request, category_id):
+        data = request.data
         category = self.get_category()
-        serializer.save(owner=self.request.user, category=category)
+        data["category"] = category.pk
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        response_serializer = ReadTaskSerializer(
+            instance=serializer.instance,  # type: ignore
+            context=self.get_serializer_context(),  # type: ignore
+        )
+
+        return Response(data=response_serializer.data)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context["category_determined"] = True  # type: ignore
-        context["include_category"] = False  # type: ignore
+        context["user"] = self.request.user  # type: ignore
+
+        if self.request.method == "GET":
+            context["exclude_category"] = True  # type: ignore
         return context

@@ -51,8 +51,13 @@ class TaskSummarySerializer(ModelSerializer):
 
 
 class ReadTaskSerializer(ModelSerializer):
-    """Read-only serializer responsible for reading tasks"""
+    """Read-only serializer responsible for reading tasks
 
+    If 'exclude_category' is set to True in the context, 'category' will
+    be excluded from representation.
+    """
+
+    category = CategorySerializer(read_only=True)  # type: ignore
     prerequisites = TaskSummarySerializer(
         read_only=True,  # type: ignore
         many=True,  # type: ignore
@@ -75,6 +80,13 @@ class ReadTaskSerializer(ModelSerializer):
 
     def get_dependents(self, obj):
         return TaskSummarySerializer(obj.dependents.all(), many=True).data  # type: ignore
+
+    def get_fields(self):
+        fields = super().get_fields()
+        if self.context.get("exclude_category", False):
+            fields.pop("category", None)  # type: ignore
+
+        return fields
 
     def save(self):
         raise NotImplementedError("this serializer is read-only")
