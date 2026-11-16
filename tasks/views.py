@@ -1,6 +1,3 @@
-from collections.abc import Mapping
-from typing import Any
-
 from django.db.models import Count
 from django.db.models.query import QuerySet
 from django_filters.rest_framework import DjangoFilterBackend
@@ -12,7 +9,6 @@ from rest_framework.generics import (
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 
 from core.permissions import IsOwner
@@ -43,8 +39,10 @@ class CategoryListView(ListCreateAPIView):
             tasks_count=Count("task")
         )
 
-    def perform_create(self, serializer) -> None:
-        serializer.save(owner=self.request.user)
+    def get_serializer_context(self):
+        context = self.get_serializer_context()
+        context["user"] = self.request.user  # type: ignore
+        return context
 
 
 class CategoryDetailView(RetrieveUpdateDestroyAPIView):

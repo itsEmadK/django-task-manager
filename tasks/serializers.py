@@ -8,6 +8,8 @@ from tasks.models import Category, Task
 
 
 class CategorySerializer(ModelSerializer):
+    """Responsible for reading and writing categories.
+    Requires 'user' in the context if used for writing categories."""
 
     tasks_count = IntegerField(read_only=True)
 
