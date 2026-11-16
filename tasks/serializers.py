@@ -32,6 +32,8 @@ class CategorySerializer(ModelSerializer):
         if category_name_exists:
             raise ValidationError("this category name has been used before")
 
+        return value
+
 
 class TaskSummarySerializer(ModelSerializer):
     class Meta:
