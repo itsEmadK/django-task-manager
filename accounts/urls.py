@@ -1,6 +1,7 @@
 from django.urls import path
 
 from accounts.views import (
+    CurrentUserProfileView,
     CurrentUserView,
     LoginView,
     LogoutAllView,
@@ -14,4 +15,5 @@ urlpatterns = [
     path("logout/", LogoutView.as_view()),
     path("logoutall/", LogoutAllView.as_view()),
     path("me/", CurrentUserView.as_view()),
+    path("me/profile", CurrentUserProfileView.as_view()),
 ]

@@ -1,9 +1,5 @@
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
-from django.core.validators import (
-    MaxValueValidator,
-    MinLengthValidator,
-    MinValueValidator,
-)
+from django.core import validators
 from django.db import models
 from django.db.models.functions import Lower
 
@@ -33,14 +29,6 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser):
     email = models.EmailField(unique=True)
-    name = models.CharField(
-        max_length=150,
-        validators=[MinLengthValidator(3)],
-    )
-    age = models.PositiveSmallIntegerField(
-        null=True,
-        validators=[MinValueValidator(18), MaxValueValidator(120)],
-    )
     is_staff = models.BooleanField(default=False)
 
     objects = UserManager()
@@ -54,3 +42,22 @@ class User(AbstractBaseUser):
                 name="unique_email_per_user",
             )
         ]
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="profile",
+        related_query_name="profile",
+    )
+    name = models.CharField(
+        max_length=150,
+        validators=[validators.MinLengthValidator(3)],
+    )
+    age = models.PositiveSmallIntegerField(
+        validators=[
+            validators.MinValueValidator(18),
+            validators.MaxValueValidator(120),
+        ],
+    )

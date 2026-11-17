@@ -4,11 +4,11 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from knox.models import AuthToken
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.exceptions import ValidationError as DrfValidationError
-from rest_framework.fields import CharField, DateTimeField, EmailField
+from rest_framework.fields import CharField, DateTimeField, EmailField, IntegerField
 from rest_framework.serializers import ModelSerializer, Serializer
 from rest_framework.validators import UniqueValidator
 
-from accounts.models import User
+from accounts.models import Profile, User
 
 
 def drf_validate_password(value):
@@ -19,52 +19,40 @@ def drf_validate_password(value):
 
 
 class UserSerializer(ModelSerializer):
-    password = CharField(write_only=True, validators=[drf_validate_password])
 
     class Meta:
         model = User
         fields = [
             "id",
             "email",
+        ]
+
+    def save(self):
+        raise NotImplementedError("this is a read-only serializer")
+
+
+class ProfileSerializer(ModelSerializer):
+    """Requires 'user' to be included in the serializer
+    context if used for profile creation"""
+
+    user = UserSerializer(
+        read_only=True,  # type: ignore
+    )
+
+    class Meta:
+        model = Profile
+        fields = [
             "name",
             "age",
-            "password",
+            "user",
         ]
-        extra_kwargs = {
-            "id": {
-                "read_only": True,
-            },
-            "email": {
-                "read_only": True,
-            },
-            "name": {
-                "required": True,
-            },
-            "age": {
-                "required": False,
-            },
-            "password": {
-                "required": False,
-                "write_only": True,
-            },
-        }
 
-    def create(self, validated_data):
-        raise DrfValidationError(
-            "Registering users must be done through the register serializer"
-        )
-
-    def update(self, instance: User, validated_data: dict):
-        password = validated_data.pop("password", None)
-        if password:
-            instance.set_password(password)
-
-        instance.name = validated_data.get("name", instance.name)
-        instance.age = validated_data.get("age", instance.age)
-
-        instance.save()
-
-        return instance
+    def save(self):
+        if self.instance:
+            return super().save()
+        else:
+            user = self.context["user"]
+            return super().save(user=user)
 
 
 class RegisterRequestSerializer(Serializer):
@@ -75,13 +63,7 @@ class RegisterRequestSerializer(Serializer):
     password = CharField(write_only=True, validators=[drf_validate_password])
 
     def save(self):
-        email = self.validated_data.pop("email")
-        password = self.validated_data.pop("password", None)
-
-        if not password:
-            raise DrfValidationError("password is required")
-
-        user: User = User.objects.create_user(email=email, password=password)
+        user: User = User.objects.create_user(**self.validated_data)
         token, token_key = AuthToken.objects.create(user=user)  # type: ignore
 
         return (user, token, token_key)
@@ -118,6 +100,6 @@ class LoginRequestSerializer(Serializer):
 
 
 class LoginResponseSerializer(Serializer):
-    user = UserSerializer(read_only=True)  # type: ignore
+    profile = ProfileSerializer(read_only=True)  # type: ignore
     token = CharField(read_only=True)  # type: ignore
     expiry = DateTimeField(read_only=True)

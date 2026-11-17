@@ -3,23 +3,29 @@ from knox.models import AuthToken
 from knox.views import LogoutAllView as KnoxLogoutAllView
 from knox.views import LogoutView as KnoxLogoutView
 from rest_framework import status
+from rest_framework.exceptions import NotFound
+from rest_framework.generics import (
+    RetrieveAPIView,
+)
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
 )
 from rest_framework.renderers import JSONRenderer
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.models import Profile
 from accounts.serializers import (
     LoginRequestSerializer,
     LoginResponseSerializer,
+    ProfileSerializer,
     RegisterRequestSerializer,
     RegisterResponseSerializer,
     UserSerializer,
 )
+from .errors import ProfileAlreadyExists
 
 
 class RegisterUserView(APIView):
@@ -80,15 +86,77 @@ class LoginView(APIView):
         return Response(data=response_serializer.data)
 
 
-class CurrentUserView(APIView):
-    renderer_classes = [JSONRenderer]
-    parser_classes = [JSONParser]
+class CurrentUserView(RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+
+    def get_object(self):
+        return self.request.user
+
+
+class CurrentUserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(responses=UserSerializer)
-    def get(self, request: Request):
-        serializer = UserSerializer(instance=request.user)  # type: ignore
+    def get_profile(self):
+        try:
+            return Profile.objects.get(user=self.request.user)
+        except Profile.DoesNotExist:
+            raise NotFound("You have not created a profile yet")
+
+    @extend_schema(responses=[ProfileSerializer])
+    def get(self, request):
+        profile = self.get_profile()
+        serializer = ProfileSerializer(instance=profile)  # type: ignore
         return Response(data=serializer.data)
+
+    @extend_schema(request=ProfileSerializer, responses=[ProfileSerializer])
+    def post(self, request):
+        profile_already_exists = Profile.objects.filter(user=self.request.user).exists()
+        if profile_already_exists:
+            raise ProfileAlreadyExists()
+
+        serializer = ProfileSerializer(
+            data=request.data,  # type: ignore
+            context={"user": self.request.user},  # type: ignore
+        )
+        serializer.is_valid(raise_exception=True)
+        profile = serializer.save()
+
+        return Response(
+            data=ProfileSerializer(instance=profile),  # type: ignore
+            status=status.HTTP_201_CREATED,
+        )
+
+    @extend_schema(request=ProfileSerializer, responses=[ProfileSerializer])
+    def patch(self, request):
+        instance = self.get_profile()
+        serializer = ProfileSerializer(
+            instance=instance,  # type: ignore
+            data=request.data,  # type: ignore
+            context={"user": self.request.user},  # type: ignore
+            partial=True,  # type: ignore
+        )
+        serializer.is_valid(raise_exception=True)
+        profile = serializer.save()
+
+        return Response(
+            data=ProfileSerializer(instance=profile).data,  # type: ignore
+        )
+
+    @extend_schema(request=ProfileSerializer, responses=[ProfileSerializer])
+    def put(self, request):
+        instance = self.get_profile()
+        serializer = ProfileSerializer(
+            instance=instance,  # type: ignore
+            data=request.data,  # type: ignore
+            context={"user": self.request.user},  # type: ignore
+        )
+        serializer.is_valid(raise_exception=True)
+        profile = serializer.save()
+
+        return Response(
+            data=ProfileSerializer(instance=profile).data,  # type: ignore
+        )
 
 
 class LogoutView(KnoxLogoutView):
