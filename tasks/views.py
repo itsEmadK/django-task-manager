@@ -13,13 +13,9 @@ from rest_framework.views import APIView
 
 from core.permissions import IsOwner
 from tasks.models import Category, Project, Task
-from tasks.serializers import (
-    ProjectSerializer,
-    ReadCategorySerializer,
-    ReadTaskSerializer,
-    WriteCategorySerializer,
-    WriteTaskSerializer,
-)
+from tasks.serializers.category import ReadCategorySerializer, WriteCategorySerializer
+from tasks.serializers.project import ProjectSerializer
+from tasks.serializers.task import ReadTaskSerializer, WriteTaskSerializer
 
 
 class CategoryListView(ListCreateAPIView):
