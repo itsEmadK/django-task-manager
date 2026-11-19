@@ -390,3 +390,81 @@ class DeleteProjectCategoriesView(APIView):
         project = self.get_project(project_id)
         num_deleted, _ = project.categories.all().delete()
         return Response(data={"deleted_categories_count": num_deleted})
+
+
+class ProjectTasksView(ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]
+    search_fields = ["title", "notes"]
+    filterset_fields = {
+        "due_date": ["exact", "lte", "gte"],
+        "priority": ["exact"],
+        "status": ["exact"],
+    }
+    ordering_fields = [
+        "id",
+        "title",
+        "due_date",
+        "priority",
+        "status",
+    ]
+
+    def get_project(self):
+        project_id = self.kwargs["project_id"]
+        project = get_object_or_404(
+            queryset=Project.objects.filter(owner=self.request.user),
+            pk=project_id,
+        )
+        return project
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return ReadTaskSerializer
+        else:
+            return WriteTaskSerializer
+
+    def get_queryset(self):
+        project = self.get_project()
+        return Task.objects.filter(
+            owner=self.request.user,
+            project=project,
+        )
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["user"] = self.request.user  # type: ignore
+        if self.request.method == "GET":
+            context["exclude_fields"] = ["project"]  # type: ignore
+
+        return context
+
+    def create(self, request, project_id):
+        data = request.data
+        project = self.get_project()
+        data["project"] = project.pk
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        response_serializer = ReadTaskSerializer(
+            instance=serializer.instance,  # type: ignore
+            context=self.get_serializer_context(),  # type: ignore
+        )
+
+        return Response(data=response_serializer.data)
+
+
+class DeleteProjectTasksView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_project(self, project_id):
+        project = get_object_or_404(
+            queryset=Project.objects.filter(owner=self.request.user),
+            id=project_id,
+        )
+        return project
+
+    def delete(self, request, project_id):
+        project = self.get_project(project_id)
+        num_deleted, _ = project.tasks.all().delete()
+        return Response(data={"deleted_tasks_count": num_deleted})
