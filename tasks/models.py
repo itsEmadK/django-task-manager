@@ -6,11 +6,6 @@ from django.utils import timezone
 from accounts.models import User
 
 
-def validate_due_date_in_the_future(value):
-    if value < timezone.now():
-        raise exceptions.ValidationError("Due date must be in the future")
-
-
 class Priority(models.IntegerChoices):
     LOW = 1, "Low"
     MEDIUM = 2, "Medium"
@@ -98,7 +93,6 @@ class Task(models.Model):
     notes = models.TextField(null=True)
     due_date = models.DateTimeField(
         null=True,
-        validators=[validate_due_date_in_the_future],
     )
     priority = models.IntegerField(
         choices=Priority,
