@@ -29,10 +29,10 @@ class ProjectSerializer(ModelSerializer):
 
     def save(self):
         if self.instance:
+            return super().save()
+        else:
             user = self.context["user"]
             return super().save(owner=user)
-        else:
-            return super().save()
 
 
 class CategorySerializer(ModelSerializer):
