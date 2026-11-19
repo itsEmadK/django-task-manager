@@ -42,7 +42,7 @@ class CategoryListView(ListCreateAPIView):
             return Category.objects.none()
 
         return Category.objects.filter(owner=self.request.user).annotate(
-            tasks_count=Count("task")
+            tasks_count=Count("task", distinct=True)
         )
 
     def get_serializer_context(self):
@@ -296,8 +296,8 @@ class ProjectListView(ListCreateAPIView):
 
         return (
             Project.objects.filter(owner=self.request.user)
-            .annotate(tasks_count=Count("task"))
-            .annotate(categories_count=Count("category"))
+            .annotate(tasks_count=Count("task", distinct=True))
+            .annotate(categories_count=Count("category", distinct=True))
         )
 
     def get_serializer_context(self):
@@ -350,7 +350,7 @@ class ProjectCategoriesView(ListCreateAPIView):
         return Category.objects.filter(
             owner=self.request.user,
             project=project,
-        ).annotate(tasks_count=Count("task"))
+        ).annotate(tasks_count=Count("task", distinct=True))
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
