@@ -57,6 +57,8 @@ class Category(models.Model):
         Project,
         on_delete=models.CASCADE,
         null=True,
+        related_name="categories",
+        related_query_name="category",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -88,6 +90,8 @@ class Task(models.Model):
         Project,
         on_delete=models.CASCADE,
         null=True,
+        related_name="tasks",
+        related_query_name="task",
     )
     title = models.CharField(max_length=150)
     notes = models.TextField(null=True)
