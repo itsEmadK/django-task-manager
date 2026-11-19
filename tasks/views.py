@@ -380,11 +380,11 @@ class DeleteProjectCategoriesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_project(self, project_id):
-        category = get_object_or_404(
+        project = get_object_or_404(
             queryset=Project.objects.filter(owner=self.request.user),
             id=project_id,
         )
-        return category
+        return project
 
     def delete(self, request, project_id):
         project = self.get_project(project_id)
