@@ -4,7 +4,35 @@ from rest_framework.fields import IntegerField, SerializerMethodField
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import ModelSerializer
 
-from tasks.models import Category, Task
+from tasks.models import Category, Project, Task
+
+
+class ProjectSerializer(ModelSerializer):
+    """Responsible for reading and writing projects.
+    \n Requires 'user' in the context if used for writing projects."""
+
+    class Meta:
+        model = Project
+        fields = [
+            "id",
+            "name",
+            "description",
+            "status",
+            "priority",
+            "tasks_count",
+            "categories_count",
+        ]
+        read_only_fields = [
+            "tasks_count",
+            "categories_count",
+        ]
+
+    def save(self):
+        if self.instance:
+            user = self.context["user"]
+            return super().save(owner=user)
+        else:
+            return super().save()
 
 
 class CategorySerializer(ModelSerializer):
