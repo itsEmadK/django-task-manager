@@ -8,7 +8,11 @@ from tasks.serializers.project import ProjectSerializer
 
 
 class ReadCategorySerializer(ModelSerializer):
-    """Read-only serializer responsible for reading categories"""
+    """Read-only serializer responsible for reading categories
+
+    Accepts an 'exclude_fields' str array in the context. Fields present in
+    this array will be excluded from the serializer representation
+    """
 
     tasks_count = IntegerField(required=False)
     project = ProjectSerializer()
@@ -21,6 +25,14 @@ class ReadCategorySerializer(ModelSerializer):
             "project",
             "tasks_count",
         ]
+
+    def get_fields(self):
+        exclude_fields = self.context.get("exclude_fields", [])
+        fields = super().get_fields()
+        for field in exclude_fields:
+            fields.pop(field, None)
+
+        return fields
 
     def save(self):
         raise NotImplementedError("this serializer is read-only")
@@ -79,37 +91,3 @@ class WriteCategorySerializer(ModelSerializer):
     def save(self):
         user = self.context["user"]
         return super().save(owner=user)
-
-
-class ProjectCategorySerializer(ModelSerializer):
-    """Serializer responsible for reading categories in a project.
-    \n Requires 'project' and 'user' in the context when used for writing"""
-
-    tasks_count = IntegerField(read_only=True)
-
-    class Meta:
-        model = Category
-        fields = [
-            "id",
-            "name",
-            "tasks_count",
-        ]
-
-    def validate_name(self, value):
-        project = self.context["project"]
-        queryset = Category.objects.filter(project=project)
-
-        if self.instance:
-            queryset = queryset.exclude(pk=self.instance.pk)
-
-        if queryset.filter(name__iexact=value).exists():
-            raise ValidationError(
-                "this category name has already been used in this project"
-            )
-
-        return value
-
-    def save(self):
-        user = self.context["user"]
-        project = self.context["project"]
-        return super().save(owner=user, project=project)

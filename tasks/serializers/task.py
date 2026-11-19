@@ -27,8 +27,8 @@ class TaskSummarySerializer(ModelSerializer):
 class ReadTaskSerializer(ModelSerializer):
     """Read-only serializer responsible for reading tasks
 
-    If 'exclude_category' is set to True in the context, 'category' will
-    be excluded from representation.
+    Accepts an 'exclude_fields' str array in the context. Fields present in
+    this array will be excluded from the serializer representation
     """
 
     category = ReadCategorySerializer()
@@ -58,9 +58,10 @@ class ReadTaskSerializer(ModelSerializer):
         return TaskSummarySerializer(obj.dependents.all(), many=True).data  # type: ignore
 
     def get_fields(self):
+        exclude_fields = self.context.get("exclude_fields", [])
         fields = super().get_fields()
-        if self.context.get("exclude_category", False):
-            fields.pop("category", None)  # type: ignore
+        for field in exclude_fields:
+            fields.pop(field, None)
 
         return fields
 

@@ -14,7 +14,6 @@ from rest_framework.views import APIView
 from core.permissions import IsOwner
 from tasks.models import Category, Project, Task
 from tasks.serializers.category import (
-    ProjectCategorySerializer,
     ReadCategorySerializer,
     WriteCategorySerializer,
 )
@@ -271,7 +270,7 @@ class CategoryTasksView(ListCreateAPIView):
         context["user"] = self.request.user  # type: ignore
 
         if self.request.method == "GET":
-            context["exclude_category"] = True  # type: ignore
+            context["exclude_fields"] = ["category"]  # type: ignore
         return context
 
 
@@ -324,7 +323,6 @@ class ProjectDetailView(RetrieveUpdateDestroyAPIView):
 
 class ProjectCategoriesView(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = ProjectCategorySerializer
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ["name"]
     ordering_fields = [
@@ -332,6 +330,12 @@ class ProjectCategoriesView(ListCreateAPIView):
         "name",
         "tasks_count",
     ]
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return ReadCategorySerializer
+        else:
+            return WriteCategorySerializer
 
     def get_project(self):
         project_id = self.kwargs["project_id"]
@@ -351,9 +355,25 @@ class ProjectCategoriesView(ListCreateAPIView):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context["user"] = self.request.user  # type: ignore
-        context["project"] = self.get_project()  # type: ignore
+        if self.request.method == "GET":
+            context["exclude_fields"] = ["project"]  # type: ignore
 
         return context
+
+    def create(self, request, project_id):
+        data = request.data
+        project = self.get_project()
+        data["project"] = project.pk
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        response_serializer = ReadCategorySerializer(
+            instance=serializer.instance,  # type: ignore
+            context=self.get_serializer_context(),  # type: ignore
+        )
+
+        return Response(data=response_serializer.data)
 
 
 class DeleteProjectCategoriesView(APIView):
