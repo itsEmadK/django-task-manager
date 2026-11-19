@@ -14,16 +14,16 @@ from rest_framework.views import APIView
 from core.permissions import IsOwner
 from tasks.models import Category, Project, Task
 from tasks.serializers import (
-    CategorySerializer,
     ProjectSerializer,
+    ReadCategorySerializer,
     ReadTaskSerializer,
+    WriteCategorySerializer,
     WriteTaskSerializer,
 )
 
 
 class CategoryListView(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = CategorySerializer
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ["name"]
     ordering_fields = [
@@ -31,6 +31,12 @@ class CategoryListView(ListCreateAPIView):
         "name",
         "tasks_count",
     ]
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return ReadCategorySerializer
+        else:
+            return WriteCategorySerializer
 
     def get_queryset(self) -> QuerySet:
         if getattr(self, "swagger_fake_view", False):
@@ -45,15 +51,58 @@ class CategoryListView(ListCreateAPIView):
         context["user"] = self.request.user  # type: ignore
         return context
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        response_serializer = ReadCategorySerializer(
+            instance=serializer.instance,  # type: ignore
+            context=self.get_serializer_context(),  # type: ignore
+        )
+
+        return Response(data=response_serializer.data)
+
 
 class CategoryDetailView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsOwner]
-    serializer_class = CategorySerializer
     lookup_url_kwarg = "id"
     lookup_field = "pk"
 
     def get_queryset(self) -> QuerySet:
         return Category.objects.filter(owner=self.request.user)
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return ReadCategorySerializer
+        else:
+            return WriteCategorySerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["user"] = self.request.user  # type: ignore
+        return context
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+
+        serializer = self.get_serializer(
+            instance=instance,
+            data=request.data,
+            partial=partial,
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        response_serializer = ReadCategorySerializer(
+            instance=serializer.instance,  # type: ignore
+            context=self.get_serializer_context(),  # type: ignore
+        )
+
+        return Response(data=response_serializer.data)
 
 
 class DeleteCategoryTasksView(APIView):
