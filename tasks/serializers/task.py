@@ -5,7 +5,7 @@ from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import ModelSerializer
 
 from tasks.models import Category, Project, Task
-from tasks.serializers.category import ReadCategorySerializer
+from tasks.serializers.category import ReadCategorySerializer, ReadProjectCategorySerializer
 from tasks.serializers.project import ProjectSerializer
 
 
@@ -25,11 +25,7 @@ class TaskSummarySerializer(ModelSerializer):
 
 
 class ReadTaskSerializer(ModelSerializer):
-    """Read-only serializer responsible for reading tasks
-
-    Accepts an 'exclude_fields' str array in the context. Fields present in
-    this array will be excluded from the serializer representation
-    """
+    """Read-only serializer responsible for reading tasks"""
 
     category = ReadCategorySerializer()
     project = ProjectSerializer()
@@ -56,14 +52,6 @@ class ReadTaskSerializer(ModelSerializer):
 
     def get_dependents(self, obj):
         return TaskSummarySerializer(obj.dependents.all(), many=True).data  # type: ignore
-
-    def get_fields(self):
-        exclude_fields = self.context.get("exclude_fields", [])
-        fields = super().get_fields()
-        for field in exclude_fields:
-            fields.pop(field, None)
-
-        return fields
 
     def save(self):
         raise NotImplementedError("this serializer is read-only")
@@ -160,3 +148,21 @@ class WriteTaskSerializer(ModelSerializer):
     def save(self):
         user = self.context["user"]
         return super().save(owner=user)
+
+
+class ReadCategoryTaskSerializer(ReadTaskSerializer):
+
+    def get_fields(self):
+        fields = super().get_fields()
+        fields.pop("category", None)
+        return fields
+
+
+class ReadProjectTaskSerializer(ReadTaskSerializer):
+
+    category = ReadProjectCategorySerializer()
+
+    def get_fields(self):
+        fields = super().get_fields()
+        fields.pop("project", None)
+        return fields

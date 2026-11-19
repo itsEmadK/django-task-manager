@@ -19,7 +19,11 @@ from tasks.serializers.category import (
     WriteCategorySerializer,
 )
 from tasks.serializers.project import ProjectSerializer
-from tasks.serializers.task import ReadTaskSerializer, WriteTaskSerializer
+from tasks.serializers.task import (
+    ReadProjectTaskSerializer,
+    ReadTaskSerializer,
+    WriteTaskSerializer,
+)
 
 
 class CategoryListView(ListCreateAPIView):
@@ -417,7 +421,7 @@ class ProjectTasksView(ListCreateAPIView):
 
     def get_serializer_class(self):
         if self.request.method == "GET":
-            return ReadTaskSerializer
+            return ReadProjectTaskSerializer
         else:
             return WriteTaskSerializer
 
@@ -444,7 +448,7 @@ class ProjectTasksView(ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
 
-        response_serializer = ReadTaskSerializer(
+        response_serializer = ReadProjectTaskSerializer(
             instance=serializer.instance,  # type: ignore
             context=self.get_serializer_context(),  # type: ignore
         )
