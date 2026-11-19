@@ -58,7 +58,8 @@ class WriteCategorySerializer(ModelSerializer):
         if self.instance:
             queryset = queryset.exclude(pk=self.instance.pk)
 
-        project_pk = attrs.get("project", getattr(self.instance, "project", None)).pk
+        project = attrs.get("project", getattr(self.instance, "project", None))
+        project_pk = getattr(project, "pk", None)
 
         if (
             project_pk
