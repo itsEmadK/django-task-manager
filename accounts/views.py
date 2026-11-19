@@ -123,7 +123,7 @@ class CurrentUserProfileView(APIView):
         profile = serializer.save()
 
         return Response(
-            data=ProfileSerializer(instance=profile),  # type: ignore
+            data=ProfileSerializer(instance=profile).data,  # type: ignore
             status=status.HTTP_201_CREATED,
         )
 
