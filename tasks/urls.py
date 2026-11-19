@@ -5,6 +5,7 @@ from tasks.views import (
     CategoryListView,
     CategoryTasksView,
     DeleteCategoryTasksView,
+    ProjectListView,
     TaskDetailView,
     TaskListView,
 )
@@ -18,4 +19,5 @@ urlpatterns = [
     ),
     path("tasks/", TaskListView.as_view()),
     path("tasks/<int:id>/", TaskDetailView.as_view()),
+    path("projects/", ProjectListView.as_view()),
 ]

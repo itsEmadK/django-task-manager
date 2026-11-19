@@ -12,9 +12,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.permissions import IsOwner
-from tasks.models import Category, Task
+from tasks.models import Category, Project, Task
 from tasks.serializers import (
     CategorySerializer,
+    ProjectSerializer,
     ReadTaskSerializer,
     WriteTaskSerializer,
 )
@@ -222,4 +223,36 @@ class CategoryTasksView(ListCreateAPIView):
 
         if self.request.method == "GET":
             context["exclude_category"] = True  # type: ignore
+        return context
+
+
+class ProjectListView(ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ProjectSerializer
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = [
+        "name",
+        "description",
+    ]
+    ordering_fields = [
+        "id",
+        "name",
+        "priority",
+        "status",
+        "tasks_count",
+    ]
+
+    def get_queryset(self) -> QuerySet:
+        if getattr(self, "swagger_fake_view", False):
+            return Project.objects.none()
+
+        return (
+            Project.objects.filter(owner=self.request.user)
+            .annotate(tasks_count=Count("task"))
+            .annotate(categories_count=Count("category"))
+        )
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["user"] = self.request.user  # type: ignore
         return context
