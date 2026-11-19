@@ -44,6 +44,15 @@ class Project(models.Model):
     def deadline_exceeded(self):
         return timezone.now >= self.deadline
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                "owner",
+                Lower("name"),
+                name="unique_project_name_per_user",
+            )
+        ]
+
 
 class Category(models.Model):
     name = models.CharField(max_length=150)
@@ -67,8 +76,9 @@ class Category(models.Model):
         constraints = [
             models.UniqueConstraint(
                 "owner",
+                "project",
                 Lower("name"),
-                name="unique_category_name_per_user",
+                name="unique_category_name_per_user_project",
             ),
         ]
 
@@ -127,6 +137,7 @@ class Task(models.Model):
             models.UniqueConstraint(
                 Lower("title"),
                 "owner",
-                name="unique_task_title_per_user",
+                "project",
+                name="unique_task_title_per_user_project",
             ),
         ]
