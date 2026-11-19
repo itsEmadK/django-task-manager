@@ -69,7 +69,7 @@ class ReadTaskSerializer(ModelSerializer):
 
 
 class WriteTaskSerializer(ModelSerializer):
-    """ResponsProjectSerializer/updating tasks; requires 'user' in its context"""
+    """Responsible for creating/updating tasks; requires 'user' in its context"""
 
     prerequisites = PrimaryKeyRelatedField(
         queryset=Task.objects.none(),
