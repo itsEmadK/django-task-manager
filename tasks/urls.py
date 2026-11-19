@@ -28,7 +28,7 @@ urlpatterns = [
     path("projects/<int:id>/", ProjectDetailView.as_view()),
     path("projects/<int:project_id>/categories", ProjectCategoriesView.as_view()),
     path(
-        "projects/<int:project_id>/categories/delete-categories",
+        "projects/<int:project_id>/delete-categories",
         DeleteProjectCategoriesView.as_view(),
     ),
     path("projects/<int:project_id>/tasks", ProjectTasksView.as_view()),
