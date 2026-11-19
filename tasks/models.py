@@ -38,7 +38,7 @@ class Project(models.Model):
         choices=Status,
         default=Status.NOT_STARTED,
     )
-    deadline = models.DateTimeField()
+    deadline = models.DateTimeField(null=True)
 
     @property
     def deadline_exceeded(self):
