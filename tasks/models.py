@@ -80,7 +80,13 @@ class Category(models.Model):
                 "project",
                 Lower("name"),
                 name="unique_category_name_per_user_project",
-                nulls_distinct=False,
+                condition=models.Q(project__isnull=False),
+            ),
+            models.UniqueConstraint(
+                "owner",
+                Lower("name"),
+                name="unique_category_name_per_user_without_project",
+                condition=models.Q(project__isnull=True),
             ),
         ]
 
@@ -141,6 +147,13 @@ class Task(models.Model):
                 "owner",
                 "project",
                 name="unique_task_title_per_user_project",
+                condition=models.Q(project__isnull=False),
+            ),
+            models.UniqueConstraint(
+                Lower("title"),
+                "owner",
+                name="unique_task_title_per_user_without_project",
                 nulls_distinct=False,
+                condition=models.Q(project__isnull=True),
             ),
         ]
