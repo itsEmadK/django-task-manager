@@ -2,12 +2,52 @@ from django.core import exceptions
 from django.db import models
 from django.db.models.functions import Lower
 from django.utils import timezone
+
 from accounts.models import User
 
 
 def validate_due_date_in_the_future(value):
     if value < timezone.now():
         raise exceptions.ValidationError("Due date must be in the future")
+
+
+class Priority(models.IntegerChoices):
+    LOW = 1, "Low"
+    MEDIUM = 2, "Medium"
+    HIGH = 3, "High"
+    URGENT = 4, "Urgent"
+
+
+class Project(models.Model):
+    class Status(models.TextChoices):
+        NOT_STARTED = "not_started", "Not started"
+        DOING = "doing", "Doing"
+        PAUSED = "paused", "Paused"
+        CANCELED = "canceled", "Canceled"
+        DONE = "done", "Done"
+
+    name = models.CharField(max_length=150)
+    description = models.TextField(null=True)
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="projects",
+        related_query_name="project",
+    )
+    priority = models.IntegerField(
+        choices=Priority,
+        null=True,
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status,
+        default=Status.NOT_STARTED,
+    )
+    deadline = models.DateTimeField()
+
+    @property
+    def deadline_exceeded(self):
+        return timezone.now >= self.deadline
 
 
 class Category(models.Model):
@@ -17,6 +57,11 @@ class Category(models.Model):
         on_delete=models.CASCADE,
         related_name="categories",
         related_query_name="category",
+    )
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        null=True,
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -33,12 +78,6 @@ class Category(models.Model):
 
 class Task(models.Model):
 
-    class Priority(models.IntegerChoices):
-        LOW = 1, "Low"
-        MEDIUM = 2, "Medium"
-        HIGH = 3, "High"
-        URGENT = 4, "Urgent"
-
     class Status(models.TextChoices):
         NOT_STARTED = "not_started", "Not started"
         DOING = "doing", "Doing"
@@ -49,6 +88,11 @@ class Task(models.Model):
         on_delete=models.CASCADE,
         related_name="tasks",
         related_query_name="task",
+    )
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        null=True,
     )
     title = models.CharField(max_length=150)
     notes = models.TextField(null=True)
