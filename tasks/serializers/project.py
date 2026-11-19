@@ -1,3 +1,4 @@
+from rest_framework.exceptions import ValidationError
 from rest_framework.fields import IntegerField
 from rest_framework.serializers import ModelSerializer
 
@@ -29,3 +30,15 @@ class ProjectSerializer(ModelSerializer):
         else:
             user = self.context["user"]
             return super().save(owner=user)
+
+    def validate_name(self, value):
+        user = self.context["user"]
+        queryset = Project.objects.filter(owner=user)
+
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+
+        if queryset.filter(name__iexact=value).exists():
+            raise ValidationError("this project name has been used before")
+
+        return value
