@@ -8,11 +8,7 @@ from tasks.serializers.project import ProjectSerializer
 
 
 class ReadCategorySerializer(ModelSerializer):
-    """Read-only serializer responsible for reading categories
-
-    Accepts an 'exclude_fields' str array in the context. Fields present in
-    this array will be excluded from the serializer representation
-    """
+    """Read-only serializer responsible for reading categories"""
 
     tasks_count = IntegerField(required=False)
     project = ProjectSerializer()
@@ -25,14 +21,6 @@ class ReadCategorySerializer(ModelSerializer):
             "project",
             "tasks_count",
         ]
-
-    def get_fields(self):
-        exclude_fields = self.context.get("exclude_fields", [])
-        fields = super().get_fields()
-        for field in exclude_fields:
-            fields.pop(field, None)
-
-        return fields
 
     def save(self):
         raise NotImplementedError("this serializer is read-only")
@@ -91,3 +79,11 @@ class WriteCategorySerializer(ModelSerializer):
     def save(self):
         user = self.context["user"]
         return super().save(owner=user)
+
+
+class ReadProjectCategorySerializer(ReadCategorySerializer):
+
+    def get_fields(self):
+        fields = super().get_fields()
+        fields.pop("project", None)
+        return fields

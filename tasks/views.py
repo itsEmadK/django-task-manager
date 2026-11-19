@@ -15,6 +15,7 @@ from core.permissions import IsOwner
 from tasks.models import Category, Project, Task
 from tasks.serializers.category import (
     ReadCategorySerializer,
+    ReadProjectCategorySerializer,
     WriteCategorySerializer,
 )
 from tasks.serializers.project import ProjectSerializer
@@ -333,7 +334,7 @@ class ProjectCategoriesView(ListCreateAPIView):
 
     def get_serializer_class(self):
         if self.request.method == "GET":
-            return ReadCategorySerializer
+            return ReadProjectCategorySerializer
         else:
             return WriteCategorySerializer
 
@@ -355,9 +356,6 @@ class ProjectCategoriesView(ListCreateAPIView):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context["user"] = self.request.user  # type: ignore
-        if self.request.method == "GET":
-            context["exclude_fields"] = ["project"]  # type: ignore
-
         return context
 
     def create(self, request, project_id):
@@ -368,7 +366,7 @@ class ProjectCategoriesView(ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
 
-        response_serializer = ReadCategorySerializer(
+        response_serializer = ReadProjectCategorySerializer(
             instance=serializer.instance,  # type: ignore
             context=self.get_serializer_context(),  # type: ignore
         )
