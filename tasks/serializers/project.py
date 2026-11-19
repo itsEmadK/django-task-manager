@@ -9,8 +9,8 @@ class ProjectSerializer(ModelSerializer):
     """Responsible for reading and writing projects.
     \n Requires 'user' in the context if used for writing projects."""
 
-    tasks_count = IntegerField(read_only=True)
-    categories_count = IntegerField(read_only=True)
+    tasks_count = IntegerField(read_only=True, required=False)
+    categories_count = IntegerField(read_only=True, required=False)
 
     class Meta:
         model = Project
