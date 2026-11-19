@@ -301,3 +301,18 @@ class ProjectListView(ListCreateAPIView):
         context = super().get_serializer_context()
         context["user"] = self.request.user  # type: ignore
         return context
+
+
+class ProjectDetailView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated, IsOwner]
+    serializer_class = ProjectSerializer
+    lookup_url_kwarg = "id"
+    lookup_field = "pk"
+
+    def get_queryset(self) -> QuerySet:
+        return Project.objects.filter(owner=self.request.user)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["user"] = self.request.user  # type: ignore
+        return context
