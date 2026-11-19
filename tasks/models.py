@@ -50,6 +50,7 @@ class Project(models.Model):
                 "owner",
                 Lower("name"),
                 name="unique_project_name_per_user",
+                nulls_distinct=False,
             )
         ]
 
@@ -79,6 +80,7 @@ class Category(models.Model):
                 "project",
                 Lower("name"),
                 name="unique_category_name_per_user_project",
+                nulls_distinct=False,
             ),
         ]
 
@@ -139,5 +141,6 @@ class Task(models.Model):
                 "owner",
                 "project",
                 name="unique_task_title_per_user_project",
+                nulls_distinct=False,
             ),
         ]
