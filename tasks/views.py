@@ -13,7 +13,11 @@ from rest_framework.views import APIView
 
 from core.permissions import IsOwner
 from tasks.models import Category, Project, Task
-from tasks.serializers.category import ReadCategorySerializer, WriteCategorySerializer
+from tasks.serializers.category import (
+    ProjectCategorySerializer,
+    ReadCategorySerializer,
+    WriteCategorySerializer,
+)
 from tasks.serializers.project import ProjectSerializer
 from tasks.serializers.task import ReadTaskSerializer, WriteTaskSerializer
 
@@ -316,3 +320,53 @@ class ProjectDetailView(RetrieveUpdateDestroyAPIView):
         context = super().get_serializer_context()
         context["user"] = self.request.user  # type: ignore
         return context
+
+
+class ProjectCategoriesView(ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ProjectCategorySerializer
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ["name"]
+    ordering_fields = [
+        "id",
+        "name",
+        "tasks_count",
+    ]
+
+    def get_project(self):
+        project_id = self.kwargs["project_id"]
+        project = get_object_or_404(
+            queryset=Project.objects.filter(owner=self.request.user),
+            pk=project_id,
+        )
+        return project
+
+    def get_queryset(self):
+        project = self.get_project()
+        return Category.objects.filter(
+            owner=self.request.user,
+            project=project,
+        ).annotate(tasks_count=Count("task"))
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["user"] = self.request.user  # type: ignore
+        context["project"] = self.get_project()  # type: ignore
+
+        return context
+
+
+class DeleteProjectCategoriesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_project(self, project_id):
+        category = get_object_or_404(
+            queryset=Project.objects.filter(owner=self.request.user),
+            id=project_id,
+        )
+        return category
+
+    def delete(self, request, project_id):
+        project = self.get_project(project_id)
+        num_deleted, _ = project.categories.all().delete()
+        return Response(data={"deleted_categories_count": num_deleted})

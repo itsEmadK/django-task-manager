@@ -79,3 +79,37 @@ class WriteCategorySerializer(ModelSerializer):
     def save(self):
         user = self.context["user"]
         return super().save(owner=user)
+
+
+class ProjectCategorySerializer(ModelSerializer):
+    """Serializer responsible for reading categories in a project.
+    \n Requires 'project' and 'user' in the context when used for writing"""
+
+    tasks_count = IntegerField(read_only=True)
+
+    class Meta:
+        model = Category
+        fields = [
+            "id",
+            "name",
+            "tasks_count",
+        ]
+
+    def validate_name(self, value):
+        project = self.context["project"]
+        queryset = Category.objects.filter(project=project)
+
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+
+        if queryset.filter(name__iexact=value).exists():
+            raise ValidationError(
+                "this category name has already been used in this project"
+            )
+
+        return value
+
+    def save(self):
+        user = self.context["user"]
+        project = self.context["project"]
+        return super().save(owner=user, project=project)
