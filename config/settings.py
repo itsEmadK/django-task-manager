@@ -162,5 +162,5 @@ REST_KNOX = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "Task Manager API",
     "DESCRIPTION": "Task Manager API documentation",
-    # "VERSION": "1.0.0",
+    "COMPONENT_SPLIT_REQUEST": True,
 }
