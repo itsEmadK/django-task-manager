@@ -1,5 +1,5 @@
-import uuid
-
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models.functions import Lower
 from django.utils import timezone
@@ -92,6 +92,63 @@ class Category(models.Model):
         ]
 
 
+class Attachment(models.Model):
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+    )
+    object_id = models.CharField(max_length=128)
+    content_object = GenericForeignKey(
+        ct_field="content_type",
+        fk_field="object_id",
+    )
+
+    class Type(models.TextChoices):
+        FILE = "file", "File"
+        EXTERNAL_URL = "external_url", "External URL"
+
+    title = models.CharField(max_length=50)
+    notes = models.CharField(
+        max_length=300,
+        null=True,
+    )
+    file = models.FileField(
+        null=True,
+        upload_to="attachments",
+        default=None,
+    )
+    url = models.URLField(
+        null=True,
+        default=None,
+    )
+    order = models.IntegerField(default=0)
+    type = models.CharField(
+        max_length=20,
+        choices=Type.choices,
+    )
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    type="file",
+                    file__isnull=False,
+                    url__isnull=True,
+                )
+                | models.Q(
+                    type="external_url",
+                    file="",
+                    url__isnull=False,
+                ),
+                name="either_file_or_url_not_both",
+            ),
+        ]
+
+    def delete(self, *args, **kwargs):
+        self.file.delete()
+        super().delete(*args, **kwargs)
+
+
 class Task(models.Model):
 
     class Status(models.TextChoices):
@@ -140,6 +197,7 @@ class Task(models.Model):
         related_name="tasks",
         related_query_name="task",
     )
+    attachments = GenericRelation(Attachment)
 
     class Meta:
         constraints = [
@@ -158,56 +216,3 @@ class Task(models.Model):
                 condition=models.Q(project__isnull=True),
             ),
         ]
-
-
-class TaskAttachment(models.Model):
-    class Type(models.TextChoices):
-        FILE = "file", "File"
-        EXTERNAL_URL = "external_url", "External URL"
-
-    title = models.CharField(max_length=50)
-    task = models.ForeignKey(
-        Task,
-        on_delete=models.CASCADE,
-        related_name="attachments",
-        related_query_name="attachment",
-    )
-    notes = models.CharField(
-        max_length=300,
-        null=True,
-    )
-    file = models.FileField(
-        null=True,
-        upload_to="task-attachments",
-        default=None,
-    )
-    url = models.URLField(
-        null=True,
-        default=None,
-    )
-    order = models.IntegerField(default=0)
-    type = models.CharField(
-        max_length=20,
-        choices=Type.choices,
-    )
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                condition=models.Q(
-                    type="file",
-                    file__isnull=False,
-                    url__isnull=True,
-                )
-                | models.Q(
-                    type="external_url",
-                    file="",
-                    url__isnull=False,
-                ),
-                name="either_file_or_url_not_both",
-            ),
-        ]
-
-    def delete(self, *args, **kwargs):
-        self.file.delete()
-        super().delete(*args, **kwargs)

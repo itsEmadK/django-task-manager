@@ -15,7 +15,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.permissions import IsOwner
-from tasks.models import Category, Project, Task, TaskAttachment
+from tasks.models import Attachment, Category, Project, Task
+from tasks.serializers.attachment import (
+    ReadAttachmentSerializer,
+    WriteAttachmentSerializer,
+)
 from tasks.serializers.category import (
     ReadCategorySerializer,
     ReadProjectCategorySerializer,
@@ -24,9 +28,7 @@ from tasks.serializers.category import (
 from tasks.serializers.project import ProjectSerializer
 from tasks.serializers.task import (
     ReadProjectTaskSerializer,
-    ReadTaskAttachmentSerializer,
     ReadTaskSerializer,
-    WriteTaskAttachmentSerializer,
     WriteTaskSerializer,
 )
 
@@ -488,22 +490,22 @@ class CreateTaskAttachmentView(APIView):
         )
 
     @extend_schema(
-        request=WriteTaskAttachmentSerializer,
-        responses=[ReadTaskAttachmentSerializer],
+        request=WriteAttachmentSerializer,
+        responses=[ReadAttachmentSerializer],
     )
     def post(self, request, task_id):
         task = self.get_task(task_id)
-        serializer = WriteTaskAttachmentSerializer(
+        serializer = WriteAttachmentSerializer(
             data=request.data,  # type: ignore
             context={  # type: ignore
-                "task": task,
+                "content_object": task,
             },
         )
         serializer.is_valid(raise_exception=True)
         attachment = serializer.save()
 
         return Response(
-            data=ReadTaskAttachmentSerializer(
+            data=ReadAttachmentSerializer(
                 instance=attachment,  # type: ignore
                 context={"request": request},  # type: ignore
             ).data,
@@ -525,18 +527,17 @@ class TaskAttachmentDetailView(RetrieveUpdateDestroyAPIView):
         )
 
     def get_queryset(self):
-        return TaskAttachment.objects.filter(task=self.get_task())
+        return Attachment.objects.filter(content_object=self.get_task())
 
     def get_serializer_class(self):
         if self.request.method == "GET":
-            return ReadTaskAttachmentSerializer
+            return ReadAttachmentSerializer
         else:
-            return WriteTaskAttachmentSerializer
+            return WriteAttachmentSerializer
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context["user"] = self.request.user  # type: ignore
-        context["task"] = self.get_task()  # type: ignore
+        context["content_type"] = self.get_task()  # type: ignore
         return context
 
     def update(self, request, *args, **kwargs):
@@ -551,7 +552,7 @@ class TaskAttachmentDetailView(RetrieveUpdateDestroyAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
-        response_serializer = ReadTaskAttachmentSerializer(
+        response_serializer = ReadAttachmentSerializer(
             instance=serializer.instance,  # type: ignore
             context=self.get_serializer_context(),  # type: ignore
         )
