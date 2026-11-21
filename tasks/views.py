@@ -1,18 +1,21 @@
 from django.db.models import Count
 from django.db.models.query import QuerySet
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema
+from rest_framework import status
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveUpdateDestroyAPIView,
     get_object_or_404,
 )
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.permissions import IsOwner
-from tasks.models import Category, Project, Task
+from tasks.models import Category, Project, Task, TaskAttachment
 from tasks.serializers.category import (
     ReadCategorySerializer,
     ReadProjectCategorySerializer,
@@ -21,7 +24,9 @@ from tasks.serializers.category import (
 from tasks.serializers.project import ProjectSerializer
 from tasks.serializers.task import (
     ReadProjectTaskSerializer,
+    ReadTaskAttachmentSerializer,
     ReadTaskSerializer,
+    WriteTaskAttachmentSerializer,
     WriteTaskSerializer,
 )
 
@@ -470,3 +475,85 @@ class DeleteProjectTasksView(APIView):
         project = self.get_project(project_id)
         num_deleted, _ = project.tasks.all().delete()
         return Response(data={"deleted_tasks_count": num_deleted})
+
+
+class CreateTaskAttachmentView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+
+    def get_task(self, task_id):
+        return get_object_or_404(
+            queryset=Task.objects.filter(owner=self.request.user),
+            pk=task_id,
+        )
+
+    @extend_schema(
+        request=WriteTaskAttachmentSerializer,
+        responses=[ReadTaskAttachmentSerializer],
+    )
+    def post(self, request, task_id):
+        task = self.get_task(task_id)
+        serializer = WriteTaskAttachmentSerializer(
+            data=request.data,  # type: ignore
+            context={  # type: ignore
+                "task": task,
+            },
+        )
+        serializer.is_valid(raise_exception=True)
+        attachment = serializer.save()
+
+        return Response(
+            data=ReadTaskAttachmentSerializer(
+                instance=attachment,  # type: ignore
+                context={"request": request},  # type: ignore
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class TaskAttachmentDetailView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+    lookup_url_kwarg = "id"
+    lookup_field = "pk"
+
+    def get_task(self):
+        task_id = self.kwargs["task_id"]
+        return get_object_or_404(
+            queryset=Task.objects.filter(owner=self.request.user),
+            pk=task_id,
+        )
+
+    def get_queryset(self):
+        return TaskAttachment.objects.filter(task=self.get_task())
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return ReadTaskAttachmentSerializer
+        else:
+            return WriteTaskAttachmentSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["user"] = self.request.user  # type: ignore
+        context["task"] = self.get_task()  # type: ignore
+        return context
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+
+        serializer = self.get_serializer(
+            instance=instance,
+            data=request.data,
+            partial=partial,
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        response_serializer = ReadTaskAttachmentSerializer(
+            instance=serializer.instance,  # type: ignore
+            context=self.get_serializer_context(),  # type: ignore
+        )
+
+        return Response(data=response_serializer.data)

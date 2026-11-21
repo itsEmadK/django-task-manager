@@ -164,3 +164,6 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Task Manager API documentation",
     "COMPONENT_SPLIT_REQUEST": True,
 }
+
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "media/"

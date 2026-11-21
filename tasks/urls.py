@@ -4,6 +4,7 @@ from tasks.views import (
     CategoryDetailView,
     CategoryListView,
     CategoryTasksView,
+    CreateTaskAttachmentView,
     DeleteCategoryTasksView,
     DeleteProjectCategoriesView,
     DeleteProjectTasksView,
@@ -11,6 +12,7 @@ from tasks.views import (
     ProjectDetailView,
     ProjectListView,
     ProjectTasksView,
+    TaskAttachmentDetailView,
     TaskDetailView,
     TaskListView,
 )
@@ -24,6 +26,10 @@ urlpatterns = [
     ),
     path("tasks/", TaskListView.as_view()),
     path("tasks/<int:id>/", TaskDetailView.as_view()),
+    path("tasks/<int:task_id>/attachments", CreateTaskAttachmentView.as_view()),
+    path(
+        "tasks/<int:task_id>/attachments/<int:id>", TaskAttachmentDetailView.as_view()
+    ),
     path("projects/", ProjectListView.as_view()),
     path("projects/<int:id>/", ProjectDetailView.as_view()),
     path("projects/<int:project_id>/categories", ProjectCategoriesView.as_view()),
