@@ -59,12 +59,11 @@ class WriteCategorySerializer(ModelSerializer):
             queryset = queryset.exclude(pk=self.instance.pk)
 
         project = attrs.get("project", getattr(self.instance, "project", None))
-        project_pk = getattr(project, "pk", None)
 
         if (
-            project_pk
+            project
             and queryset.filter(
-                project__pk=project_pk,  # type: ignore
+                project=project,
             ).exists()
         ):
             raise ValidationError(
