@@ -5,9 +5,10 @@ from knox.views import LogoutView as KnoxLogoutView
 from rest_framework import status
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import (
+    ListCreateAPIView,
     RetrieveAPIView,
 )
-from rest_framework.parsers import JSONParser
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
@@ -20,7 +21,8 @@ from accounts.models import Profile
 from accounts.serializers import (
     LoginRequestSerializer,
     LoginResponseSerializer,
-    ProfileSerializer,
+    ReadProfileSerializer,
+    WriteProfileSerializer,
     RegisterRequestSerializer,
     RegisterResponseSerializer,
     UserSerializer,
@@ -96,6 +98,11 @@ class CurrentUserView(RetrieveAPIView):
 
 class CurrentUserProfileView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+
+    def get_serializer_context(self):
+        context = {"request": self.request}
+        return context
 
     def get_profile(self):
         try:
@@ -103,19 +110,19 @@ class CurrentUserProfileView(APIView):
         except Profile.DoesNotExist:
             raise NotFound("You have not created a profile yet")
 
-    @extend_schema(responses=[ProfileSerializer])
+    @extend_schema(responses=[ReadProfileSerializer])
     def get(self, request):
         profile = self.get_profile()
-        serializer = ProfileSerializer(instance=profile)  # type: ignore
+        serializer = ReadProfileSerializer(instance=profile, context=self.get_serializer_context())  # type: ignore
         return Response(data=serializer.data)
 
-    @extend_schema(request=ProfileSerializer, responses=[ProfileSerializer])
+    @extend_schema(request=WriteProfileSerializer, responses=[ReadProfileSerializer])
     def post(self, request):
         profile_already_exists = Profile.objects.filter(user=self.request.user).exists()
         if profile_already_exists:
             raise ProfileAlreadyExists()
 
-        serializer = ProfileSerializer(
+        serializer = WriteProfileSerializer(
             data=request.data,  # type: ignore
             context={"user": self.request.user},  # type: ignore
         )
@@ -123,14 +130,14 @@ class CurrentUserProfileView(APIView):
         profile = serializer.save()
 
         return Response(
-            data=ProfileSerializer(instance=profile).data,  # type: ignore
+            data=ReadProfileSerializer(instance=profile, context=self.get_serializer_context()).data,  # type: ignore
             status=status.HTTP_201_CREATED,
         )
 
-    @extend_schema(request=ProfileSerializer, responses=[ProfileSerializer])
+    @extend_schema(request=WriteProfileSerializer, responses=[ReadProfileSerializer])
     def patch(self, request):
         instance = self.get_profile()
-        serializer = ProfileSerializer(
+        serializer = WriteProfileSerializer(
             instance=instance,  # type: ignore
             data=request.data,  # type: ignore
             context={"user": self.request.user},  # type: ignore
@@ -140,13 +147,13 @@ class CurrentUserProfileView(APIView):
         profile = serializer.save()
 
         return Response(
-            data=ProfileSerializer(instance=profile).data,  # type: ignore
+            data=ReadProfileSerializer(instance=profile, context=self.get_serializer_context()).data,  # type: ignore
         )
 
-    @extend_schema(request=ProfileSerializer, responses=[ProfileSerializer])
+    @extend_schema(request=WriteProfileSerializer, responses=[ReadProfileSerializer])
     def put(self, request):
         instance = self.get_profile()
-        serializer = ProfileSerializer(
+        serializer = WriteProfileSerializer(
             instance=instance,  # type: ignore
             data=request.data,  # type: ignore
             context={"user": self.request.user},  # type: ignore
@@ -155,7 +162,7 @@ class CurrentUserProfileView(APIView):
         profile = serializer.save()
 
         return Response(
-            data=ProfileSerializer(instance=profile).data,  # type: ignore
+            data=ReadProfileSerializer(instance=profile, context=self.get_serializer_context()).data,  # type: ignore
         )
 
 

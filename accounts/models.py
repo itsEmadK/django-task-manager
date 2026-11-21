@@ -61,3 +61,7 @@ class Profile(models.Model):
             validators.MaxValueValidator(120),
         ],
     )
+    avatar = models.ImageField(
+        null=True,
+        upload_to="avatars",
+    )

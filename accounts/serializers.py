@@ -2,9 +2,9 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from knox.models import AuthToken
+from rest_framework import fields
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.exceptions import ValidationError as DrfValidationError
-from rest_framework.fields import CharField, DateTimeField, EmailField, IntegerField
 from rest_framework.serializers import ModelSerializer, Serializer
 from rest_framework.validators import UniqueValidator
 
@@ -31,13 +31,14 @@ class UserSerializer(ModelSerializer):
         raise NotImplementedError("this is a read-only serializer")
 
 
-class ProfileSerializer(ModelSerializer):
-    """Requires 'user' to be included in the serializer
-    context if used for profile creation"""
+class ReadProfileSerializer(ModelSerializer):
+    """Requires 'request' to be included in the serializer
+    context for generating the avatar absolute url"""
 
     user = UserSerializer(
         read_only=True,  # type: ignore
     )
+    avatar = fields.SerializerMethodField()
 
     class Meta:
         model = Profile
@@ -45,6 +46,29 @@ class ProfileSerializer(ModelSerializer):
             "name",
             "age",
             "user",
+            "avatar",
+        ]
+
+    def save(self):
+        raise NotImplementedError("this is a read-only serializer")
+
+    def get_avatar(self, obj):
+        if obj.avatar:
+            request = self.context["request"]
+            return request.build_absolute_uri(obj.avatar.url)
+
+        return None
+
+
+class WriteProfileSerializer(ModelSerializer):
+    """Requires 'user' to be included in the serializer context"""
+
+    class Meta:
+        model = Profile
+        fields = [
+            "name",
+            "age",
+            "avatar",
         ]
 
     def save(self):
@@ -56,11 +80,11 @@ class ProfileSerializer(ModelSerializer):
 
 
 class RegisterRequestSerializer(Serializer):
-    email = EmailField(
+    email = fields.EmailField(
         required=True,
         validators=[UniqueValidator(queryset=User.objects.all())],
     )
-    password = CharField(write_only=True, validators=[drf_validate_password])
+    password = fields.CharField(write_only=True, validators=[drf_validate_password])
 
     def save(self):
         user: User = User.objects.create_user(**self.validated_data)
@@ -71,15 +95,15 @@ class RegisterRequestSerializer(Serializer):
 
 class RegisterResponseSerializer(Serializer):
     user = UserSerializer(read_only=True)  # type: ignore
-    token = CharField(read_only=True)
-    expiry = DateTimeField(read_only=True)
+    token = fields.CharField(read_only=True)
+    expiry = fields.DateTimeField(read_only=True)
 
 
 class LoginRequestSerializer(Serializer):
-    email = EmailField(
+    email = fields.EmailField(
         required=True,
     )
-    password = CharField(
+    password = fields.CharField(
         write_only=True,
         validators=[drf_validate_password],
     )
@@ -100,6 +124,6 @@ class LoginRequestSerializer(Serializer):
 
 
 class LoginResponseSerializer(Serializer):
-    profile = ProfileSerializer(read_only=True)  # type: ignore
-    token = CharField(read_only=True)  # type: ignore
-    expiry = DateTimeField(read_only=True)
+    profile = ReadProfileSerializer(read_only=True)  # type: ignore
+    token = fields.CharField(read_only=True)  # type: ignore
+    expiry = fields.DateTimeField(read_only=True)
