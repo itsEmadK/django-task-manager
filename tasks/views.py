@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Count
 from django.db.models.query import QuerySet
 from django_filters.rest_framework import DjangoFilterBackend
@@ -527,7 +528,11 @@ class TaskAttachmentDetailView(RetrieveUpdateDestroyAPIView):
         )
 
     def get_queryset(self):
-        return Attachment.objects.filter(content_object=self.get_task())
+        task = self.get_task()
+        return Attachment.objects.filter(
+            content_type=ContentType.objects.get_for_model(model=task),
+            object_id=task.pk,
+        )
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -537,7 +542,7 @@ class TaskAttachmentDetailView(RetrieveUpdateDestroyAPIView):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context["content_type"] = self.get_task()  # type: ignore
+        context["content_object"] = self.get_task()  # type: ignore
         return context
 
     def update(self, request, *args, **kwargs):
