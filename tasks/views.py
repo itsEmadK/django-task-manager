@@ -227,6 +227,40 @@ class TaskDetailView(RetrieveUpdateDestroyAPIView):
         return Response(data=response_serializer.data)
 
 
+class TaskDependentsView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ReadTaskSerializer
+
+    def get_task(self):
+        task_id = self.kwargs["task_id"]
+        task = get_object_or_404(
+            queryset=Task.objects.filter(owner=self.request.user),
+            pk=task_id,
+        )
+        return task
+
+    def get_queryset(self):
+        task = self.get_task
+        return task.depdendents  # type: ignore
+
+
+class TaskPrerequisitesView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ReadTaskSerializer
+
+    def get_task(self):
+        task_id = self.kwargs["task_id"]
+        task = get_object_or_404(
+            queryset=Task.objects.filter(owner=self.request.user),
+            pk=task_id,
+        )
+        return task
+
+    def get_queryset(self):
+        task = self.get_task
+        return task.prerequisites  # type: ignore
+
+
 class CategoryTasksView(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter, OrderingFilter, DjangoFilterBackend]

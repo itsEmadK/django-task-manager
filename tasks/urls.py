@@ -15,9 +15,11 @@ from tasks.views import (
     ProjectListView,
     ProjectTasksView,
     TaskAttachmentDetailView,
+    TaskDependentsView,
     TaskDetailView,
     TaskHistoryView,
     TaskListView,
+    TaskPrerequisitesView,
 )
 
 urlpatterns = [
@@ -30,6 +32,8 @@ urlpatterns = [
     ),
     path("tasks/", TaskListView.as_view()),
     path("tasks/<int:id>/", TaskDetailView.as_view()),
+    path("tasks/<int:id>/depdendents", TaskDependentsView.as_view()),
+    path("tasks/<int:id>/prerequisites", TaskPrerequisitesView.as_view()),
     path("tasks/<int:id>/history", TaskHistoryView.as_view()),
     path("tasks/<int:task_id>/attachments", CreateTaskAttachmentView.as_view()),
     path(
