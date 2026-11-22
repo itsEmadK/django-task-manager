@@ -144,6 +144,17 @@ class Attachment(models.Model):
             ),
         ]
 
+    def save(self, *args, **kwargs):
+        if self.pk:
+            old_instance = Attachment.objects.get(pk=self.pk)
+            old_file = getattr(old_instance, "file", None)
+            new_file = getattr(self, "file", None)
+
+            if old_file and old_file.path != new_file:
+                old_file.delete(save=False)
+
+        super().save(*args, **kwargs)
+
     def delete(self, *args, **kwargs):
         self.file.delete()
         super().delete(*args, **kwargs)
