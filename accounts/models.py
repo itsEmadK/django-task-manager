@@ -2,6 +2,7 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.core import validators
 from django.db import models
 from django.db.models.functions import Lower
+from simple_history.models import HistoricalRecords
 
 
 class UserManager(BaseUserManager):
@@ -49,7 +50,6 @@ class Profile(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name="profile",
-        related_query_name="profile",
     )
     name = models.CharField(
         max_length=150,
@@ -65,3 +65,4 @@ class Profile(models.Model):
         null=True,
         upload_to="avatars",
     )
+    history = HistoricalRecords()

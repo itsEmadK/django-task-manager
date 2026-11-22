@@ -6,6 +6,7 @@ from accounts.views import (
     LoginView,
     LogoutAllView,
     LogoutView,
+    ProfileHistoryView,
     RegisterUserView,
 )
 
@@ -16,4 +17,5 @@ urlpatterns = [
     path("logoutall/", LogoutAllView.as_view()),
     path("me/", CurrentUserView.as_view()),
     path("me/profile", CurrentUserProfileView.as_view()),
+    path("me/profile/history", ProfileHistoryView.as_view()),
 ]

@@ -127,3 +127,19 @@ class LoginResponseSerializer(Serializer):
     profile = ReadProfileSerializer(read_only=True)  # type: ignore
     token = fields.CharField(read_only=True)  # type: ignore
     expiry = fields.DateTimeField(read_only=True)
+
+
+class ReadProfileHistorySerializer(ModelSerializer):
+    class Meta:
+        model = Profile.history.model  # type: ignore
+        fields = [
+            "name",
+            "age",
+            "avatar",
+            "history_date",
+            "history_type",
+            "history_change_reason",
+        ]
+
+    def save(self):
+        raise NotImplementedError("this is a read-only serializer")

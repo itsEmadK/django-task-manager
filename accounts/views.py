@@ -5,6 +5,7 @@ from knox.views import LogoutView as KnoxLogoutView
 from rest_framework import status
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import (
+    ListAPIView,
     ListCreateAPIView,
     RetrieveAPIView,
 )
@@ -21,6 +22,7 @@ from accounts.models import Profile
 from accounts.serializers import (
     LoginRequestSerializer,
     LoginResponseSerializer,
+    ReadProfileHistorySerializer,
     ReadProfileSerializer,
     WriteProfileSerializer,
     RegisterRequestSerializer,
@@ -174,3 +176,18 @@ class LogoutView(KnoxLogoutView):
 class LogoutAllView(KnoxLogoutAllView):
     def get_post_response(self, request):
         return Response("successfully revoked all sessions", status=status.HTTP_200_OK)
+
+
+class ProfileHistoryView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ReadProfileHistorySerializer
+
+    def get_profile(self):
+        try:
+            return Profile.objects.get(user=self.request.user)
+        except Profile.DoesNotExist:
+            raise NotFound("you have not created a profile yet")
+
+    def get_queryset(self):
+        profile = self.get_profile()
+        return profile.history.all().order_by("-history_date")  # type: ignore
