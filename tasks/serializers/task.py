@@ -129,6 +129,7 @@ class WriteTaskSerializer(ModelSerializer):
             queryset = queryset.exclude(pk=self.instance.pk)
 
         project = attrs.get("project", getattr(self.instance, "project", None))
+        category = attrs.get("category", getattr(self.instance, "project", None))
 
         if (
             project
@@ -140,7 +141,6 @@ class WriteTaskSerializer(ModelSerializer):
                 "this task title has already been used in this project"
             )
 
-        category = attrs.get("category")
         if project:
             if category and not project.categories.filter(pk=category.pk).exists():
                 raise ValidationError("this category isn't available in this project")
