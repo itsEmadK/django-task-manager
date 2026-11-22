@@ -86,3 +86,17 @@ class ReadProjectCategorySerializer(ReadCategorySerializer):
         fields = super().get_fields()
         fields.pop("project", None)
         return fields
+
+
+class ReadCategoryHistorySerializer(ModelSerializer):
+    class Meta:
+        model = Category.history.model  # type: ignore
+        fields = [
+            "name",
+            "history_date",
+            "history_type",
+            "history_change_reason",
+        ]
+
+    def save(self):
+        raise NotImplementedError("this is a read-only serializer")

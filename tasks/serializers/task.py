@@ -171,3 +171,23 @@ class ReadProjectTaskSerializer(ReadTaskSerializer):
         fields = super().get_fields()
         fields.pop("project", None)
         return fields
+
+
+class ReadTaskHistorySerializer(ModelSerializer):
+    class Meta:
+        model = Task.history.model  # type: ignore
+        fields = [
+            "title",
+            "notes",
+            "due_date",
+            "priority",
+            "status",
+            "project",
+            "category",
+            "history_date",
+            "history_type",
+            "history_change_reason",
+        ]
+
+    def save(self):
+        raise NotImplementedError("this is a read-only serializer")

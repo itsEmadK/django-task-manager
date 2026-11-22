@@ -6,6 +6,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.generics import (
+    ListAPIView,
     ListCreateAPIView,
     RetrieveUpdateDestroyAPIView,
     get_object_or_404,
@@ -22,13 +23,15 @@ from tasks.serializers.attachment import (
     WriteAttachmentSerializer,
 )
 from tasks.serializers.category import (
+    ReadCategoryHistorySerializer,
     ReadCategorySerializer,
     ReadProjectCategorySerializer,
     WriteCategorySerializer,
 )
-from tasks.serializers.project import ProjectSerializer
+from tasks.serializers.project import ProjectSerializer, ReadProjectHistorySerializer
 from tasks.serializers.task import (
     ReadProjectTaskSerializer,
+    ReadTaskHistorySerializer,
     ReadTaskSerializer,
     WriteTaskSerializer,
 )
@@ -563,3 +566,54 @@ class TaskAttachmentDetailView(RetrieveUpdateDestroyAPIView):
         )
 
         return Response(data=response_serializer.data)
+
+
+class TaskHistoryView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ReadTaskHistorySerializer
+
+    def get_task(self):
+        task_id = self.kwargs["id"]
+        task = get_object_or_404(
+            queryset=Task.objects.filter(owner=self.request.user),
+            pk=task_id,
+        )
+        return task
+
+    def get_queryset(self):
+        task = self.get_task()
+        return task.history.all().order_by("-history_date")  # type: ignore
+
+
+class ProjectHistoryView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ReadProjectHistorySerializer
+
+    def get_project(self):
+        project_id = self.kwargs["id"]
+        task = get_object_or_404(
+            queryset=Project.objects.filter(owner=self.request.user),
+            pk=project_id,
+        )
+        return task
+
+    def get_queryset(self):
+        task = self.get_project()
+        return task.history.all().order_by("-history_date")  # type: ignore
+
+
+class CategoryHistoryView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ReadCategoryHistorySerializer
+
+    def get_category(self):
+        category_id = self.kwargs["id"]
+        task = get_object_or_404(
+            queryset=Category.objects.filter(owner=self.request.user),
+            pk=category_id,
+        )
+        return task
+
+    def get_queryset(self):
+        task = self.get_category()
+        return task.history.all().order_by("-history_date")  # type: ignore

@@ -3,6 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models.functions import Lower
 from django.utils import timezone
+from simple_history.models import HistoricalRecords
 
 from accounts.models import User
 
@@ -40,6 +41,7 @@ class Project(models.Model):
         default=Status.NOT_STARTED,
     )
     deadline = models.DateTimeField(null=True)
+    history = HistoricalRecords()
 
     @property
     def deadline_exceeded(self):
@@ -71,8 +73,7 @@ class Category(models.Model):
         related_name="categories",
         related_query_name="category",
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()
 
     class Meta:
         constraints = [
@@ -209,6 +210,7 @@ class Task(models.Model):
         related_query_name="task",
     )
     attachments = GenericRelation(Attachment)
+    history = HistoricalRecords()
 
     class Meta:
         constraints = [

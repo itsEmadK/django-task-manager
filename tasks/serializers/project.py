@@ -42,3 +42,21 @@ class ProjectSerializer(ModelSerializer):
             raise ValidationError("this project name has been used before")
 
         return value
+
+
+class ReadProjectHistorySerializer(ModelSerializer):
+    class Meta:
+        model = Project.history.model  # type: ignore
+        fields = [
+            "name",
+            "description",
+            "priority",
+            "status",
+            "deadline",
+            "history_date",
+            "history_type",
+            "history_change_reason",
+        ]
+
+    def save(self):
+        raise NotImplementedError("this is a read-only serializer")

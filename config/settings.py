@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "django_filters",
     "knox",
+    "simple_history",
 ]
 
 MIDDLEWARE = [
