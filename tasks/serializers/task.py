@@ -73,10 +73,12 @@ class WriteTaskSerializer(ModelSerializer):
     project = PrimaryKeyRelatedField(
         queryset=Project.objects.none(),
         required=False,
+        allow_null=True,
     )
     category = PrimaryKeyRelatedField(
         queryset=Category.objects.none(),
         required=False,
+        allow_null=True,
     )
 
     class Meta:

@@ -32,6 +32,7 @@ class WriteCategorySerializer(ModelSerializer):
     project = PrimaryKeyRelatedField(
         queryset=Project.objects.none(),
         required=False,
+        allow_null=True,
     )
 
     class Meta:
