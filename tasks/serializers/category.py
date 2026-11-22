@@ -55,10 +55,19 @@ class WriteCategorySerializer(ModelSerializer):
         user = self.context["user"]
         name = attrs.get("name", getattr(self.instance, "name", None))
         queryset = Category.objects.filter(owner=user, name__iexact=name)
+        attrs_project = attrs.get("project", None)
+        instance_project = getattr(self.instance, "project", None)
+        project = attrs_project or instance_project
+
         if self.instance:
             queryset = queryset.exclude(pk=self.instance.pk)
 
-        project = attrs.get("project", getattr(self.instance, "project", None))
+            if (attrs_project != instance_project) and (
+                self.instance.tasks.count() > 0
+            ):
+                raise ValidationError(
+                    "some tasks have been assigned to this category so you can't change its project"
+                )
 
         if (
             project
