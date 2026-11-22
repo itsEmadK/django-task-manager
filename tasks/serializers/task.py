@@ -1,5 +1,3 @@
-import mimetypes
-
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SerializerMethodField
@@ -7,12 +5,12 @@ from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import ModelSerializer
 
 from tasks.models import Category, Project, Task
+from tasks.serializers.attachment import ReadAttachmentSerializer
 from tasks.serializers.category import (
     ReadCategorySerializer,
     ReadProjectCategorySerializer,
 )
 from tasks.serializers.project import ProjectSerializer
-from tasks.serializers.attachment import ReadAttachmentSerializer
 
 
 class TaskSummarySerializer(ModelSerializer):
