@@ -229,3 +229,36 @@ class Task(models.Model):
                 condition=models.Q(project__isnull=True),
             ),
         ]
+
+    def save(self, *args, **kwargs):
+        old_instance = None
+        if self.pk:
+            old_instance = Task.objects.get(pk=self.pk)
+
+        super().save(*args, **kwargs)
+
+        if self.project:
+            status_has_changed = True
+
+            if old_instance:
+                # check if status has changed during update
+                status_has_changed = old_instance.status != self.status
+
+            if status_has_changed:
+                if self.status == Task.Status.NOT_STARTED:
+                    if self.project.status == Project.Status.DONE:
+                        self.project.status = Project.Status.DOING
+                elif self.status == Task.Status.DOING:
+                    self.project.status = Project.Status.DOING
+                elif self.status == Task.Status.DONE:
+                    all_project_tasks_are_done = not (
+                        Task.objects.filter(
+                            project=self.project,
+                        )
+                        .exclude(status=Task.Status.DONE)
+                        .exists()
+                    )
+                    if all_project_tasks_are_done:
+                        self.project.status = Project.Status.DONE
+
+            self.project.save()
