@@ -58,8 +58,10 @@ class CategoryListView(ListCreateAPIView):
         if getattr(self, "swagger_fake_view", False):
             return Category.objects.none()
 
-        return Category.objects.filter(owner=self.request.user).annotate(
-            tasks_count=Count("task", distinct=True)
+        return (
+            Category.objects.select_related("project")
+            .filter(owner=self.request.user)
+            .annotate(tasks_count=Count("task", distinct=True))
         )
 
     def get_serializer_context(self):
@@ -160,7 +162,9 @@ class TaskListView(ListCreateAPIView):
         if getattr(self, "swagger_fake_view", False):
             return Task.objects.none()
 
-        return Task.objects.select_related("category").filter(owner=self.request.user)
+        return Task.objects.select_related("category", "project").filter(
+            owner=self.request.user
+        )
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -233,7 +237,7 @@ class TaskDependentsView(ListAPIView):
     serializer_class = ReadTaskSerializer
 
     def get_task(self):
-        task_id = self.kwargs["task_id"]
+        task_id = self.kwargs["id"]
         task = get_object_or_404(
             queryset=Task.objects.filter(owner=self.request.user),
             pk=task_id,
@@ -241,8 +245,8 @@ class TaskDependentsView(ListAPIView):
         return task
 
     def get_queryset(self):
-        task = self.get_task
-        return task.depdendents  # type: ignore
+        task = self.get_task()
+        return task.dependents.select_related("category", "project")  # type: ignore
 
 
 class TaskPrerequisitesView(ListAPIView):
@@ -250,7 +254,7 @@ class TaskPrerequisitesView(ListAPIView):
     serializer_class = ReadTaskSerializer
 
     def get_task(self):
-        task_id = self.kwargs["task_id"]
+        task_id = self.kwargs["id"]
         task = get_object_or_404(
             queryset=Task.objects.filter(owner=self.request.user),
             pk=task_id,
@@ -258,8 +262,8 @@ class TaskPrerequisitesView(ListAPIView):
         return task
 
     def get_queryset(self):
-        task = self.get_task
-        return task.prerequisites  # type: ignore
+        task = self.get_task()
+        return task.prerequisites.select_related("category", "project")  # type: ignore
 
 
 class CategoryTasksView(ListCreateAPIView):
