@@ -140,10 +140,16 @@ class WriteTaskSerializer(ModelSerializer):
                 "this task title has already been used in this project"
             )
 
+        category = attrs.get("category")
         if project:
-            category = attrs.get("category")
             if category and not project.categories.filter(pk=category.pk).exists():
                 raise ValidationError("this category isn't available in this project")
+        else:
+            if category and category.project:
+                if not project:
+                    raise ValidationError(
+                        "this category belongs to a project and can't be used for tasks without a project"
+                    )
 
         if not project and queryset.filter(project__isnull=True).exists():
             raise ValidationError("this task title has already been used")
